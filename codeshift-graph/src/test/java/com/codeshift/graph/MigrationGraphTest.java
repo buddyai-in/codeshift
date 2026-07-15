@@ -4,9 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.codeshift.bsg.ArchitectureProducer;
 import com.codeshift.bsg.BsgProducer;
+import com.codeshift.bsg.TransformationProducer;
 import com.codeshift.bsg.model.ArchitecturePlan;
 import com.codeshift.bsg.model.BsgGraph;
 import com.codeshift.bsg.model.BsgNode;
+import com.codeshift.bsg.model.TransformationResult;
 import com.codeshift.common.BsgConfidence;
 import com.codeshift.common.BsgNodeType;
 import java.util.List;
@@ -35,8 +37,18 @@ class MigrationGraphTest {
                     List.of(new ArchitecturePlan.ServiceBoundary("Monolith", topoOrder)),
                     List.of(new ArchitecturePlan.MigrationPhase(1, "All", topoOrder)));
 
+    // Stand-in for the Transformation Agent.
+    private static final TransformationProducer TRANSFORM_STUB = (bsg, arch, topoOrder) ->
+            new TransformationResult(
+                    arch.moduleMappings().stream()
+                            .map(m -> new TransformationResult.TransformedModule(
+                                    m.moduleId(), m.targetClass(), m.layer(), "// code", true, List.of()))
+                            .toList(),
+                    List.of(), true, List.of());
+
     private CompiledGraph<MigrationState> app() throws Exception {
-        return new MigrationGraphFactory().build(new MemorySaver(), STUB_PRODUCER, ARCH_STUB);
+        return new MigrationGraphFactory()
+                .build(new MemorySaver(), STUB_PRODUCER, ARCH_STUB, TRANSFORM_STUB);
     }
 
     @Test
@@ -59,11 +71,13 @@ class MigrationGraphTest {
         assertThat(atArchGate.get().architecture()).isPresent();
         assertThat(atArchGate.get().architecture().get().moduleMappings()).hasSize(4);
 
-        // Approve architecture → completes to BUILD.
+        // Approve architecture → build runs (transform + testgen) → DELIVERY.
         RunnableConfig c3 = app.updateState(cfg, Map.of("review_decision", "APPROVED"));
         Optional<MigrationState> done = app.invoke(GraphInput.resume(), c3);
         assertThat(done).isPresent();
-        assertThat(done.get().phase()).contains("BUILD");
+        assertThat(done.get().phase()).contains("DELIVERY");
+        assertThat(done.get().transformation()).isPresent();
+        assertThat(done.get().transformation().get().modules()).hasSize(4);
     }
 
     @Test

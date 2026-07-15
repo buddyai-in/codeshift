@@ -2,6 +2,7 @@ package com.codeshift.api;
 
 import com.codeshift.bsg.model.ArchitecturePlan;
 import com.codeshift.bsg.model.BsgGraph;
+import com.codeshift.bsg.model.TransformationResult;
 import java.io.IOException;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -97,5 +98,11 @@ public class RunController {
     @GetMapping("/{threadId}/architecture")
     public ArchitecturePlan architecture(@PathVariable String threadId) {
         return runtime.architectureOf(threadId);
+    }
+
+    /** The generated code + tests (after both gates approved). */
+    @GetMapping("/{threadId}/transformation")
+    public TransformationResult transformation(@PathVariable String threadId) {
+        return runtime.transformationOf(threadId);
     }
 }

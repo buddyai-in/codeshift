@@ -25,6 +25,7 @@
     <module>codeshift-bsg</module>
     <module>codeshift-parser</module>
     <module>codeshift-assessment</module>
+    <module>codeshift-sandbox</module>
     <module>codeshift-agents</module>
     <module>codeshift-graph</module>
     <module>codeshift-bsg-mcp</module>
@@ -95,6 +96,11 @@
       <dependency>
         <groupId>com.codeshift</groupId>
         <artifactId>codeshift-agents</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.codeshift</groupId>
+        <artifactId>codeshift-sandbox</artifactId>
         <version>${project.version}</version>
       </dependency>
     </dependencies>

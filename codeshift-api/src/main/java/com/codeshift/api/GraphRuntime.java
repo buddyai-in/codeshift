@@ -2,9 +2,11 @@ package com.codeshift.api;
 
 import com.codeshift.bsg.ArchitectureProducer;
 import com.codeshift.bsg.BsgProducer;
+import com.codeshift.bsg.TransformationProducer;
 import com.codeshift.bsg.model.ArchitecturePlan;
 import com.codeshift.bsg.model.BsgGraph;
 import com.codeshift.bsg.model.BsgNode;
+import com.codeshift.bsg.model.TransformationResult;
 import com.codeshift.common.HumanStatus;
 import com.codeshift.graph.MigrationGraphFactory;
 import com.codeshift.graph.MigrationState;
@@ -36,10 +38,11 @@ public class GraphRuntime {
 
     private final CompiledGraph<MigrationState> graph;
 
-    public GraphRuntime(BsgProducer bsgProducer, ArchitectureProducer architectureProducer) {
+    public GraphRuntime(BsgProducer bsgProducer, ArchitectureProducer architectureProducer,
+            TransformationProducer transformationProducer) {
         try {
-            this.graph = new MigrationGraphFactory()
-                    .build(new MemorySaver(), bsgProducer, architectureProducer);
+            this.graph = new MigrationGraphFactory().build(new MemorySaver(),
+                    bsgProducer, architectureProducer, transformationProducer);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to compile migration graph", e);
         }
@@ -91,6 +94,13 @@ public class GraphRuntime {
         RunnableConfig cfg = RunnableConfig.builder().threadId(threadId).build();
         return graph.getState(cfg).state().architecture()
                 .orElseThrow(() -> new IllegalStateException("No architecture for thread " + threadId));
+    }
+
+    /** The generated code + tests for a run (after both gates are approved). */
+    public TransformationResult transformationOf(String threadId) {
+        RunnableConfig cfg = RunnableConfig.builder().threadId(threadId).build();
+        return graph.getState(cfg).state().transformation()
+                .orElseThrow(() -> new IllegalStateException("No transformation for thread " + threadId));
     }
 
     /**

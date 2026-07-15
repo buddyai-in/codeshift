@@ -1,9 +1,11 @@
 import { useState } from "react";
 import BsgReviewBoard from "../components/BsgReviewBoard";
 import ArchitectureView from "../components/ArchitectureView";
+import TransformationView from "../components/TransformationView";
 import {
   getArchitecture,
   getBsg,
+  getTransformation,
   resumeRun,
   reviewNode,
   startRunPath,
@@ -12,6 +14,7 @@ import {
   type BsgGraph,
   type HumanStatus,
   type RunStart,
+  type TransformationResult,
 } from "../api";
 
 const SAMPLE_PATH = "codeshift-parser/src/test/resources/sample-project";
@@ -22,6 +25,7 @@ export default function MigratePage() {
   const [run, setRun] = useState<RunStart | null>(null);
   const [bsg, setBsg] = useState<BsgGraph | null>(null);
   const [architecture, setArchitecture] = useState<ArchitecturePlan | null>(null);
+  const [transformation, setTransformation] = useState<TransformationResult | null>(null);
   const [phase, setPhase] = useState<string>("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -75,6 +79,9 @@ export default function MigratePage() {
     try {
       const res = await resumeRun(run.threadId, "APPROVED");
       setPhase(res.phase);
+      if (res.phase === "DELIVERY") {
+        setTransformation(await getTransformation(run.threadId));
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -84,7 +91,7 @@ export default function MigratePage() {
 
   const bsgApproved = phase !== "BSG_REVIEW" && run != null;
   const atArchGate = phase === "ARCH_REVIEW";
-  const built = phase === "BUILD";
+  const built = phase === "DELIVERY";
 
   return (
     <section className="page-stack">
@@ -190,8 +197,24 @@ export default function MigratePage() {
             >
               {built ? "Architecture approved ✓" : "Approve architecture & continue"}
             </button>
-            {built && <span className="signal-pill signal-pill-ok">Gate #2 passed → BUILD</span>}
+            {built && <span className="signal-pill signal-pill-ok">Gate #2 passed → build</span>}
           </div>
+        </section>
+      )}
+
+      {run && transformation && (
+        <section className="surface">
+          <div className="surface-head">
+            <div>
+              <p className="eyebrow">Build · Transformation + Test Generation</p>
+              <h2>Generated code &amp; tests</h2>
+            </div>
+            <p className="surface-note">
+              Target code compile-checked in the sandbox; every module traces its BSG rules and
+              every business rule gets a JUnit 5 test.
+            </p>
+          </div>
+          <TransformationView result={transformation} />
         </section>
       )}
     </section>

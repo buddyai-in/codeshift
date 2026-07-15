@@ -4,8 +4,10 @@ import static org.bsc.langgraph4j.action.AsyncNodeAction.node_async;
 
 import com.codeshift.bsg.ArchitectureProducer;
 import com.codeshift.bsg.BsgProducer;
+import com.codeshift.bsg.TransformationProducer;
 import com.codeshift.bsg.model.ArchitecturePlan;
 import com.codeshift.bsg.model.BsgGraph;
+import com.codeshift.bsg.model.TransformationResult;
 import com.codeshift.common.Phase;
 import com.codeshift.common.TopologicalSort;
 import com.codeshift.parser.JavaProjectAnalyzer;
@@ -140,6 +142,26 @@ public final class GraphNodes {
             return Map.of(
                     "phase", phase,
                     "log", List.of("arch-gate: architecture " + decision + " → " + phase));
+        });
+    }
+
+    /**
+     * Build: Transformation Agent (#4) + Test Generation Agent (#5). Generates
+     * target code + tests from the approved BSG + architecture and compile-checks
+     * them in the sandbox. Terminal for the Phase 3 pipeline (→ DELIVERY).
+     */
+    public static AsyncNodeAction<MigrationState> build(TransformationProducer producer) {
+        return node_async(state -> {
+            BsgGraph bsg = state.bsg().orElse(new BsgGraph("unknown", 1, List.of(), List.of()));
+            ArchitecturePlan arch = state.architecture()
+                    .orElse(new ArchitecturePlan("JAVA_21_SPRING_BOOT", List.of(), List.of(), List.of()));
+            TransformationResult result = producer.produce(bsg, arch, state.topoOrder());
+            return Map.of(
+                    "phase", Phase.DELIVERY.name(),
+                    "transformation", result,
+                    "log", List.of("build: " + result.modules().size() + " modules transformed ("
+                            + (result.allCompiled() ? "all compiled" : "compile issues") + "), "
+                            + result.tests().size() + " tests generated"));
         });
     }
 }

@@ -30,6 +30,10 @@
       <artifactId>codeshift-model-gateway</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.codeshift</groupId>
+      <artifactId>codeshift-sandbox</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
     </dependency>

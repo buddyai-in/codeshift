@@ -6,6 +6,7 @@ import static org.bsc.langgraph4j.action.AsyncEdgeAction.edge_async;
 
 import com.codeshift.bsg.ArchitectureProducer;
 import com.codeshift.bsg.BsgProducer;
+import com.codeshift.bsg.TransformationProducer;
 import java.util.Map;
 import org.bsc.langgraph4j.CompileConfig;
 import org.bsc.langgraph4j.CompiledGraph;
@@ -32,11 +33,13 @@ public class MigrationGraphFactory {
      *
      * (* = durable interrupt / human gate)
      *
-     * @param bsgProducer  Analysis Agent (builds the BSG)
-     * @param archProducer Architecture Agent (builds the target architecture)
+     * @param bsgProducer    Analysis Agent (builds the BSG)
+     * @param archProducer   Architecture Agent (builds the target architecture)
+     * @param transformProducer Transformation + Test Generation agents
      */
     public CompiledGraph<MigrationState> build(BaseCheckpointSaver checkpointSaver,
-            BsgProducer bsgProducer, ArchitectureProducer archProducer) throws GraphStateException {
+            BsgProducer bsgProducer, ArchitectureProducer archProducer,
+            TransformationProducer transformProducer) throws GraphStateException {
         StateGraph<MigrationState> workflow =
                 new StateGraph<>(MigrationState.SCHEMA, MigrationState::new)
                         .addNode("discovery", GraphNodes.discovery())
@@ -46,6 +49,7 @@ public class MigrationGraphFactory {
                         .addNode("architecture", GraphNodes.architecture(archProducer))
                         .addNode("arch_review", GraphNodes.review())
                         .addNode("arch_gate", GraphNodes.archGate())
+                        .addNode("build", GraphNodes.build(transformProducer))
                         .addEdge(START, "discovery")
                         .addEdge("discovery", "analysis")
                         .addEdge("analysis", "review")
@@ -56,7 +60,11 @@ public class MigrationGraphFactory {
                                 Map.of("approved", "architecture", "rejected", END))
                         .addEdge("architecture", "arch_review")
                         .addEdge("arch_review", "arch_gate")
-                        .addEdge("arch_gate", END);
+                        .addConditionalEdges("arch_gate",
+                                edge_async(s -> "APPROVED".equals(s.reviewDecision().orElse(""))
+                                        ? "approved" : "rejected"),
+                                Map.of("approved", "build", "rejected", END))
+                        .addEdge("build", END);
 
         return workflow.compile(CompileConfig.builder()
                 .checkpointSaver(checkpointSaver)

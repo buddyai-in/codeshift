@@ -144,6 +144,22 @@ in plain English → architecture proposal. First paid pilot deliverable.
 
 **Goal:** first **complete Java 8 → Java 21** migration delivered as a Git repo.
 
+> **Status (build step landed):** ✅ `codeshift-sandbox` — a **real compilation
+> sandbox** using the in‑process JDK compiler (`javax.tools`), no Docker required;
+> reports diagnostics, compiles multi‑file sets. ✅ **Transformation Agent** (#4) +
+> **Test Generation Agent** (#5) in `codeshift-agents`: generates a target class per
+> module (BSG rule refs in Javadoc for traceability), runs a real **compile‑repair
+> loop** (max 5 attempts) against the sandbox, and emits a JUnit 5 test per BSG
+> BusinessRule with the rule id embedded. ✅ Graph `build` node (`discovery →
+> analysis → BSG gate → architecture → arch gate → build → DELIVERY`), reached only
+> when both gates are APPROVED. ✅ API `GET /runs/{id}/transformation`; UI renders the
+> generated modules (compile status + source) and tests. Verified live: 5 modules
+> generated + **compiled**, 5 tests, traced to BSG nodes.
+> **Remaining:** semantic **LLM** translation (behind the same port) instead of
+> skeletons · OpenRewrite mechanical pass · `run_tests` execution + coverage ·
+> git‑mcp (branch/commit/PR of the output repo) · Docker/Firecracker isolation ·
+> code‑diff viewer. **Deliverables (original plan) below:**
+
 **Deliverables**
 - `sandbox-mcp`: Docker runners with `compile`, `run_tests`; **compile‑repair
   loop** (max 5 attempts/module), least‑privilege, no egress.

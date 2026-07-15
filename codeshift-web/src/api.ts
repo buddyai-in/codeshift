@@ -194,3 +194,29 @@ export interface ArchitecturePlan {
 export async function getArchitecture(threadId: string): Promise<ArchitecturePlan> {
   return json(await fetch(`/runs/${threadId}/architecture`));
 }
+
+// --- Transformation (build) ------------------------------------------------
+
+export interface TransformedModule {
+  moduleId: string;
+  targetClass: string;
+  layer: string;
+  sourceCode: string;
+  compiled: boolean;
+  bsgRuleRefs: string[];
+}
+export interface GeneratedTest {
+  testClass: string;
+  sourceCode: string;
+  bsgRuleRef: string;
+}
+export interface TransformationResult {
+  modules: TransformedModule[];
+  tests: GeneratedTest[];
+  allCompiled: boolean;
+  diagnostics: string[];
+}
+
+export async function getTransformation(threadId: string): Promise<TransformationResult> {
+  return json(await fetch(`/runs/${threadId}/transformation`));
+}
