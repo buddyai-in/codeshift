@@ -37,3 +37,18 @@ codeshift:
     fallbacks:
       REASONING: openai:gpt-4.1
       CODEGEN: openai:gpt-4.1-mini
+
+---
+# Profile: nodb — the free-assessment funnel with zero infrastructure.
+# Run: java -jar codeshift-api.jar --spring.profiles.active=nodb
+# The assessment endpoints touch no database, so JPA/Flyway/DataSource are excluded.
+spring:
+  config:
+    activate:
+      on-profile: nodb
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration

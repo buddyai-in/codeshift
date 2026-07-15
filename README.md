@@ -34,7 +34,28 @@ Java-native agentic stack (chosen for a Spring Boot team; matches the product do
 | `codeshift-graph` | **langgraph4j** spine: `discovery → review (interrupt) → finalize`. Discovery parses a real project via `codeshift-parser`. Framework-agnostic. |
 | `codeshift-bsg-mcp` | Spring Boot **MCP server** (stdio) exposing the BSG store as typed tools. |
 | `codeshift-java-parser-mcp` | Spring Boot **MCP server** (stdio) exposing JavaParser analysis + assessment as tools. No DB. |
-| `codeshift-api` | The Spring Boot app: **free `/public/assess`** endpoint (zip upload → report), run lifecycle + **SSE stream** + resume-at-gate. Flyway owns the schema. |
+| `codeshift-api` | The Spring Boot app: **free `/public/assess`** endpoint (zip upload → report), run lifecycle + **SSE stream** + resume-at-gate. Flyway owns the schema. Boots DB-less with `--spring.profiles.active=nodb` for the assessment funnel. |
+| `codeshift-web` | **React 18 + Vite** UI: upload a codebase → stat cards, migration signals, price, and an interactive **react-flow dependency graph**. |
+
+## Demo the free assessment (no infrastructure)
+
+The assessment funnel needs no database and no API keys:
+
+```bash
+# Terminal 1 — backend, DB-less profile
+mvn -q -pl codeshift-api -am package -DskipTests
+java -jar codeshift-api/target/codeshift-api-0.1.0-SNAPSHOT.jar --spring.profiles.active=nodb
+
+# Terminal 2 — frontend
+cd codeshift-web && npm install && npm run dev   # http://localhost:5173
+```
+
+Open the UI and click **"Try the sample project"** — you get stat cards, migration
+signals, a price estimate, and an interactive dependency graph. Or hit the API directly:
+
+```bash
+curl -s -XPOST localhost:8080/public/assess -F file=@your-sources.zip | jq .report
+```
 
 ## Quick start
 

@@ -9,6 +9,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.codeshift.assessment.AssessmentReport;
+import com.codeshift.assessment.AssessmentResult;
+import com.codeshift.assessment.DependencyGraphView;
 import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -26,11 +28,17 @@ class AssessmentControllerTest {
     private final MockMvc mvc =
             MockMvcBuilders.standaloneSetup(new AssessmentController(assessment)).build();
 
-    private AssessmentReport canned() {
-        return new AssessmentReport("demo", 5, 42, 3, 1, false,
+    private AssessmentResult canned() {
+        AssessmentReport report = new AssessmentReport("demo", 5, 42, 3, 1, false,
                 List.of("JMS"), true, List.of("Uses the javax.* namespace ..."),
                 12.5, 2, 999, "Starter",
                 List.of("com.acme.repo.OrderRepository", "com.acme.web.OrderController"));
+        DependencyGraphView graph = new DependencyGraphView(
+                List.of(new DependencyGraphView.Node("com.acme.web.OrderController",
+                        "OrderController", "com.acme.web", true)),
+                List.of(new DependencyGraphView.Edge("com.acme.web.OrderController",
+                        "com.acme.service.OrderService")));
+        return new AssessmentResult(report, graph);
     }
 
     @Test
@@ -41,9 +49,10 @@ class AssessmentControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"projectPath\":\"/tmp/demo\",\"projectName\":\"demo\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.moduleCount").value(5))
-                .andExpect(jsonPath("$.suggestedTier").value("Starter"))
-                .andExpect(jsonPath("$.priceEstimateUsd").value(999))
-                .andExpect(jsonPath("$.messagingSystems[0]").value("JMS"));
+                .andExpect(jsonPath("$.report.moduleCount").value(5))
+                .andExpect(jsonPath("$.report.suggestedTier").value("Starter"))
+                .andExpect(jsonPath("$.report.priceEstimateUsd").value(999))
+                .andExpect(jsonPath("$.report.messagingSystems[0]").value("JMS"))
+                .andExpect(jsonPath("$.graph.edges[0].source").value("com.acme.web.OrderController"));
     }
 }

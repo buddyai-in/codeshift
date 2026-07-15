@@ -19,6 +19,13 @@ public final class AssessmentGenerator {
 
     private AssessmentGenerator() {}
 
+    /** The full result: headline report + a react-flow-ready dependency graph. */
+    public static AssessmentResult result(String projectName, ProjectAnalysis analysis) {
+        return new AssessmentResult(
+                generate(projectName, analysis),
+                DependencyGraphView.from(analysis));
+    }
+
     public static AssessmentReport generate(String projectName, ProjectAnalysis analysis) {
         int loc = analysis.totalLinesOfCode();
         int modules = analysis.modules().size();

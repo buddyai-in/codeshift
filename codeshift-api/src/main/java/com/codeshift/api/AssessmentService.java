@@ -1,7 +1,7 @@
 package com.codeshift.api;
 
 import com.codeshift.assessment.AssessmentGenerator;
-import com.codeshift.assessment.AssessmentReport;
+import com.codeshift.assessment.AssessmentResult;
 import com.codeshift.parser.JavaProjectAnalyzer;
 import com.codeshift.parser.ProjectAnalysis;
 import java.io.IOException;
@@ -17,13 +17,13 @@ import org.springframework.stereotype.Service;
 public class AssessmentService {
 
     /** Assess a server-accessible Java source directory. */
-    public AssessmentReport assessDirectory(String projectName, Path projectRoot) {
+    public AssessmentResult assessDirectory(String projectName, Path projectRoot) {
         ProjectAnalysis analysis = JavaProjectAnalyzer.analyze(projectRoot);
-        return AssessmentGenerator.generate(projectName, analysis);
+        return AssessmentGenerator.result(projectName, analysis);
     }
 
     /** Assess an uploaded source zip (extracted to a temp dir, then cleaned up). */
-    public AssessmentReport assessZip(String projectName, InputStream zipStream) throws IOException {
+    public AssessmentResult assessZip(String projectName, InputStream zipStream) throws IOException {
         Path dir = null;
         try {
             dir = ZipExtractor.extractToTempDir(zipStream);

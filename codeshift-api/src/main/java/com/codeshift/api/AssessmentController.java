@@ -1,6 +1,6 @@
 package com.codeshift.api;
 
-import com.codeshift.assessment.AssessmentReport;
+import com.codeshift.assessment.AssessmentResult;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.springframework.http.MediaType;
@@ -29,7 +29,7 @@ public class AssessmentController {
 
     /** Upload a source zip → assessment report. */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public AssessmentReport assessUpload(
+    public AssessmentResult assessUpload(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "projectName", required = false) String projectName) {
         if (file.isEmpty()) {
@@ -46,7 +46,7 @@ public class AssessmentController {
 
     /** Assess a server-accessible source directory (handy for demos / CI). */
     @PostMapping(path = "/path", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public AssessmentReport assessPath(@RequestBody PathRequest req) {
+    public AssessmentResult assessPath(@RequestBody PathRequest req) {
         return assessment.assessDirectory(req.projectName(), Path.of(req.projectPath()));
     }
 

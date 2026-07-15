@@ -15,19 +15,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * The BSG store — the concrete persistence behind the trust boundary. Agents and
  * the API touch the BSG only through here (and, over MCP, through the bsg-mcp
- * server which delegates to this service).
+ * server which delegates to this store).
+ *
+ * <p>Declared as a bean by whichever app needs persistence (see the API's
+ * {@code PersistenceConfig} and the bsg-mcp app) rather than component-scanned,
+ * so the DB-less free-assessment funnel can boot without JPA.
  *
  * <p>Phase 0 covers: persist a full version, read it back, record a human review
  * decision, approve a version. Semantic search (pgvector) and version diffing
  * arrive in Phase 1/2 — the schema already carries the embedding column.
  */
-@Service
 public class BsgStore {
 
     private final BsgVersionRepository versions;

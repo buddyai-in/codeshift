@@ -1,0 +1,253 @@
+:root {
+  --bg: #0f1220;
+  --panel: #ffffff;
+  --ink: #1c2030;
+  --muted: #6b7186;
+  --line: #e6e8f0;
+  --accent: #6d5cff;
+  --accent-ink: #4b3fd6;
+  --warn-bg: #fff4e5;
+  --warn-ink: #a55a00;
+  --ok: #1f9d63;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(180deg, #12152a 0%, #1a1f3a 100%) fixed;
+  color: var(--ink);
+}
+
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.topbar {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 8px 4px 24px;
+}
+.brand {
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+.brand span {
+  color: var(--accent);
+}
+.tagline {
+  color: #b9bed6;
+  font-size: 14px;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.panel {
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.panel h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+.panel h3 {
+  margin: 18px 0 8px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+.muted {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0 0 14px;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+input[type="text"],
+input[type="file"] {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+button {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+button.primary {
+  background: var(--accent);
+  color: #fff;
+}
+button.ghost {
+  background: #fff;
+  border-color: var(--line);
+  color: var(--accent-ink);
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.report-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tier {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef0ff;
+  color: var(--accent-ink);
+}
+.tier-growth {
+  background: #e8f7ee;
+  color: var(--ok);
+}
+.tier-enterprise {
+  background: #fdeaea;
+  color: #b3261e;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.stat {
+  background: #f7f8fc;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+}
+.stat-value {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.stat-hint {
+  font-size: 11px;
+  color: #9aa0b4;
+  margin-top: 4px;
+}
+
+.chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+.chips-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.chip {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.chip-warn {
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+}
+
+.signals {
+  margin: 0;
+  padding-left: 18px;
+}
+.signals li {
+  margin: 6px 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.order {
+  margin-top: 16px;
+}
+.order summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--accent-ink);
+}
+.order code {
+  font-size: 12px;
+}
+
+.graph {
+  height: 440px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.error {
+  background: #fdeaea;
+  color: #b3261e;
+  border: 1px solid #f5c2c0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+}
+.hint {
+  color: #b9bed6;
+  text-align: center;
+  padding: 24px;
+}
+.foot {
+  color: #8a90ab;
+  font-size: 12px;
+  text-align: center;
+  padding: 28px 0 8px;
+}
+code {
+  background: #f0f1f7;
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
