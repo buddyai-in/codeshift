@@ -1,0 +1,1 @@
+"""BSG capability server (MCP)."""

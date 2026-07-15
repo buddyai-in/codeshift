@@ -1,0 +1,57 @@
+# CodeShift monorepo — uv workspace root.
+# Members live under packages/*, apps/*, mcp/*. This root is a virtual project
+# (not built/published) that pulls every member in so `uv sync` installs the
+# whole workspace in one editable environment.
+[project]
+name = "codeshift"
+version = "0.1.0"
+description = "CodeShift — agentic legacy-modernisation platform (Phase 0 spine)"
+requires-python = ">=3.11"
+dependencies = [
+    "codeshift-common",
+    "codeshift-model-gateway",
+    "codeshift-bsg",
+    "codeshift-graph",
+    "codeshift-business-api",
+    "codeshift-bsg-mcp",
+]
+
+[tool.uv]
+package = false          # virtual root — nothing to build here
+
+[tool.uv.workspace]
+members = ["packages/*", "apps/*", "mcp/*"]
+
+[tool.uv.sources]
+codeshift-common = { workspace = true }
+codeshift-model-gateway = { workspace = true }
+codeshift-bsg = { workspace = true }
+codeshift-graph = { workspace = true }
+codeshift-business-api = { workspace = true }
+codeshift-bsg-mcp = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.6",
+    "mypy>=1.11",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["packages", "apps", "mcp"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+namespace_packages = true
+explicit_package_bases = true

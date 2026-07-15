@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Sync workspace
+        run: uv sync --all-extras
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Type-check
+        run: uv run mypy packages apps mcp
+
+      - name: Test
+        run: uv run pytest -q
+
+  # Placeholder for the Phase 0 eval gate (BSG-extraction / transformation evals).
+  # Wired up in Phase 1 once the Analysis Agent and golden corpora exist.
+  evals:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "eval gate stub — see docs/architecture/implementation-plan.md (P0/P1)"
