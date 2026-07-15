@@ -3,10 +3,12 @@ package com.codeshift.api;
 import com.codeshift.bsg.ArchitectureProducer;
 import com.codeshift.bsg.BsgProducer;
 import com.codeshift.bsg.TransformationProducer;
+import com.codeshift.bsg.ValidationProducer;
 import com.codeshift.bsg.model.ArchitecturePlan;
 import com.codeshift.bsg.model.BsgGraph;
 import com.codeshift.bsg.model.BsgNode;
 import com.codeshift.bsg.model.TransformationResult;
+import com.codeshift.bsg.model.ValidationReport;
 import com.codeshift.common.HumanStatus;
 import com.codeshift.graph.MigrationGraphFactory;
 import com.codeshift.graph.MigrationState;
@@ -39,10 +41,10 @@ public class GraphRuntime {
     private final CompiledGraph<MigrationState> graph;
 
     public GraphRuntime(BsgProducer bsgProducer, ArchitectureProducer architectureProducer,
-            TransformationProducer transformationProducer) {
+            TransformationProducer transformationProducer, ValidationProducer validationProducer) {
         try {
             this.graph = new MigrationGraphFactory().build(new MemorySaver(),
-                    bsgProducer, architectureProducer, transformationProducer);
+                    bsgProducer, architectureProducer, transformationProducer, validationProducer);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to compile migration graph", e);
         }
@@ -101,6 +103,13 @@ public class GraphRuntime {
         RunnableConfig cfg = RunnableConfig.builder().threadId(threadId).build();
         return graph.getState(cfg).state().transformation()
                 .orElseThrow(() -> new IllegalStateException("No transformation for thread " + threadId));
+    }
+
+    /** The Validation Agent's report for a run. */
+    public ValidationReport validationOf(String threadId) {
+        RunnableConfig cfg = RunnableConfig.builder().threadId(threadId).build();
+        return graph.getState(cfg).state().validation()
+                .orElseThrow(() -> new IllegalStateException("No validation for thread " + threadId));
     }
 
     /**

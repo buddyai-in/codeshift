@@ -220,3 +220,16 @@ export interface TransformationResult {
 export async function getTransformation(threadId: string): Promise<TransformationResult> {
   return json(await fetch(`/runs/${threadId}/transformation`));
 }
+
+export interface ValidationReport {
+  compileOk: boolean;
+  bsgNodeCount: number;
+  coveredNodeCount: number;
+  coveragePercent: number;
+  passed: boolean;
+  issues: string[];
+}
+
+export async function getValidation(threadId: string): Promise<ValidationReport> {
+  return json(await fetch(`/runs/${threadId}/validation`));
+}

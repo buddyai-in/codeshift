@@ -3,6 +3,7 @@ package com.codeshift.api;
 import com.codeshift.bsg.model.ArchitecturePlan;
 import com.codeshift.bsg.model.BsgGraph;
 import com.codeshift.bsg.model.TransformationResult;
+import com.codeshift.bsg.model.ValidationReport;
 import java.io.IOException;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -104,5 +105,11 @@ public class RunController {
     @GetMapping("/{threadId}/transformation")
     public TransformationResult transformation(@PathVariable String threadId) {
         return runtime.transformationOf(threadId);
+    }
+
+    /** The Validation Agent's report (compile + BSG coverage). */
+    @GetMapping("/{threadId}/validation")
+    public ValidationReport validation(@PathVariable String threadId) {
+        return runtime.validationOf(threadId);
     }
 }

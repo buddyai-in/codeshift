@@ -5,10 +5,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.codeshift.bsg.ArchitectureProducer;
 import com.codeshift.bsg.BsgProducer;
 import com.codeshift.bsg.TransformationProducer;
+import com.codeshift.bsg.ValidationProducer;
 import com.codeshift.bsg.model.ArchitecturePlan;
 import com.codeshift.bsg.model.BsgGraph;
 import com.codeshift.bsg.model.BsgNode;
 import com.codeshift.bsg.model.TransformationResult;
+import com.codeshift.bsg.model.ValidationReport;
 import com.codeshift.common.BsgConfidence;
 import com.codeshift.common.BsgNodeType;
 import java.util.List;
@@ -46,9 +48,13 @@ class MigrationGraphTest {
                             .toList(),
                     List.of(), true, List.of());
 
+    // Stand-in for the Validation Agent (always passes).
+    private static final ValidationProducer VALIDATION_STUB = (bsg, tr) ->
+            new ValidationReport(true, bsg.nodes().size(), bsg.nodes().size(), 100, true, List.of());
+
     private CompiledGraph<MigrationState> app() throws Exception {
         return new MigrationGraphFactory()
-                .build(new MemorySaver(), STUB_PRODUCER, ARCH_STUB, TRANSFORM_STUB);
+                .build(new MemorySaver(), STUB_PRODUCER, ARCH_STUB, TRANSFORM_STUB, VALIDATION_STUB);
     }
 
     @Test
@@ -71,13 +77,14 @@ class MigrationGraphTest {
         assertThat(atArchGate.get().architecture()).isPresent();
         assertThat(atArchGate.get().architecture().get().moduleMappings()).hasSize(4);
 
-        // Approve architecture → build runs (transform + testgen) → DELIVERY.
+        // Approve architecture → build + validation run → DELIVERY.
         RunnableConfig c3 = app.updateState(cfg, Map.of("review_decision", "APPROVED"));
         Optional<MigrationState> done = app.invoke(GraphInput.resume(), c3);
         assertThat(done).isPresent();
         assertThat(done.get().phase()).contains("DELIVERY");
-        assertThat(done.get().transformation()).isPresent();
         assertThat(done.get().transformation().get().modules()).hasSize(4);
+        assertThat(done.get().validation()).isPresent();
+        assertThat(done.get().validation().get().passed()).isTrue();
     }
 
     @Test

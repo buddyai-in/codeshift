@@ -5,9 +5,11 @@ import static org.bsc.langgraph4j.action.AsyncNodeAction.node_async;
 import com.codeshift.bsg.ArchitectureProducer;
 import com.codeshift.bsg.BsgProducer;
 import com.codeshift.bsg.TransformationProducer;
+import com.codeshift.bsg.ValidationProducer;
 import com.codeshift.bsg.model.ArchitecturePlan;
 import com.codeshift.bsg.model.BsgGraph;
 import com.codeshift.bsg.model.TransformationResult;
+import com.codeshift.bsg.model.ValidationReport;
 import com.codeshift.common.Phase;
 import com.codeshift.common.TopologicalSort;
 import com.codeshift.parser.JavaProjectAnalyzer;
@@ -156,12 +158,41 @@ public final class GraphNodes {
             ArchitecturePlan arch = state.architecture()
                     .orElse(new ArchitecturePlan("JAVA_21_SPRING_BOOT", List.of(), List.of(), List.of()));
             TransformationResult result = producer.produce(bsg, arch, state.topoOrder());
+            int attempt = state.buildRetries() + 1;
             return Map.of(
-                    "phase", Phase.DELIVERY.name(),
+                    "phase", Phase.BUILD.name(),
                     "transformation", result,
-                    "log", List.of("build: " + result.modules().size() + " modules transformed ("
+                    "build_retries", attempt,
+                    "log", List.of("build[attempt " + attempt + "]: " + result.modules().size()
+                            + " modules transformed ("
                             + (result.allCompiled() ? "all compiled" : "compile issues") + "), "
                             + result.tests().size() + " tests generated"));
         });
+    }
+
+    /**
+     * Validation Agent (#6): compile + BSG coverage check. On failure the graph's
+     * bounded feedback loop routes back to {@code build} for a targeted retry.
+     */
+    public static AsyncNodeAction<MigrationState> validation(ValidationProducer producer) {
+        return node_async(state -> {
+            BsgGraph bsg = state.bsg().orElse(new BsgGraph("unknown", 1, List.of(), List.of()));
+            TransformationResult tr = state.transformation()
+                    .orElse(new TransformationResult(List.of(), List.of(), false, List.of()));
+            ValidationReport report = producer.validate(bsg, tr);
+            return Map.of(
+                    "phase", Phase.VALIDATION.name(),
+                    "validation", report,
+                    "log", List.of("validation: compile=" + report.compileOk()
+                            + ", BSG coverage=" + report.coveragePercent() + "%, "
+                            + (report.passed() ? "PASSED" : "FAILED " + report.issues())));
+        });
+    }
+
+    /** Terminal node: the run is validated and ready for delivery. */
+    public static AsyncNodeAction<MigrationState> delivery() {
+        return node_async(state -> Map.of(
+                "phase", Phase.DELIVERY.name(),
+                "log", List.of("delivery: migration validated and ready")));
     }
 }

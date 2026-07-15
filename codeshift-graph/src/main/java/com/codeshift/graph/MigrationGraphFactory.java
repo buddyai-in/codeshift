@@ -7,6 +7,7 @@ import static org.bsc.langgraph4j.action.AsyncEdgeAction.edge_async;
 import com.codeshift.bsg.ArchitectureProducer;
 import com.codeshift.bsg.BsgProducer;
 import com.codeshift.bsg.TransformationProducer;
+import com.codeshift.bsg.ValidationProducer;
 import java.util.Map;
 import org.bsc.langgraph4j.CompileConfig;
 import org.bsc.langgraph4j.CompiledGraph;
@@ -36,10 +37,13 @@ public class MigrationGraphFactory {
      * @param bsgProducer    Analysis Agent (builds the BSG)
      * @param archProducer   Architecture Agent (builds the target architecture)
      * @param transformProducer Transformation + Test Generation agents
+     * @param validationProducer Validation Agent (compile + BSG coverage)
      */
     public CompiledGraph<MigrationState> build(BaseCheckpointSaver checkpointSaver,
             BsgProducer bsgProducer, ArchitectureProducer archProducer,
-            TransformationProducer transformProducer) throws GraphStateException {
+            TransformationProducer transformProducer, ValidationProducer validationProducer)
+            throws GraphStateException {
+        final int maxBuildRetries = 3;
         StateGraph<MigrationState> workflow =
                 new StateGraph<>(MigrationState.SCHEMA, MigrationState::new)
                         .addNode("discovery", GraphNodes.discovery())
@@ -50,6 +54,8 @@ public class MigrationGraphFactory {
                         .addNode("arch_review", GraphNodes.review())
                         .addNode("arch_gate", GraphNodes.archGate())
                         .addNode("build", GraphNodes.build(transformProducer))
+                        .addNode("validation", GraphNodes.validation(validationProducer))
+                        .addNode("delivery", GraphNodes.delivery())
                         .addEdge(START, "discovery")
                         .addEdge("discovery", "analysis")
                         .addEdge("analysis", "review")
@@ -64,7 +70,17 @@ public class MigrationGraphFactory {
                                 edge_async(s -> "APPROVED".equals(s.reviewDecision().orElse(""))
                                         ? "approved" : "rejected"),
                                 Map.of("approved", "build", "rejected", END))
-                        .addEdge("build", END);
+                        .addEdge("build", "validation")
+                        // Feedback loop: validation failure → targeted rebuild (bounded).
+                        .addConditionalEdges("validation",
+                                edge_async(s -> {
+                                    if (s.validation().map(v -> v.passed()).orElse(false)) {
+                                        return "passed";
+                                    }
+                                    return s.buildRetries() < maxBuildRetries ? "retry" : "failed";
+                                }),
+                                Map.of("passed", "delivery", "retry", "build", "failed", "delivery"))
+                        .addEdge("delivery", END);
 
         return workflow.compile(CompileConfig.builder()
                 .checkpointSaver(checkpointSaver)

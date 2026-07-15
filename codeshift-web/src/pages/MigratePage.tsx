@@ -6,6 +6,7 @@ import {
   getArchitecture,
   getBsg,
   getTransformation,
+  getValidation,
   resumeRun,
   reviewNode,
   startRunPath,
@@ -15,6 +16,7 @@ import {
   type HumanStatus,
   type RunStart,
   type TransformationResult,
+  type ValidationReport,
 } from "../api";
 
 const SAMPLE_PATH = "codeshift-parser/src/test/resources/sample-project";
@@ -26,6 +28,7 @@ export default function MigratePage() {
   const [bsg, setBsg] = useState<BsgGraph | null>(null);
   const [architecture, setArchitecture] = useState<ArchitecturePlan | null>(null);
   const [transformation, setTransformation] = useState<TransformationResult | null>(null);
+  const [validation, setValidation] = useState<ValidationReport | null>(null);
   const [phase, setPhase] = useState<string>("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -81,6 +84,7 @@ export default function MigratePage() {
       setPhase(res.phase);
       if (res.phase === "DELIVERY") {
         setTransformation(await getTransformation(run.threadId));
+        setValidation(await getValidation(run.threadId));
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -214,6 +218,17 @@ export default function MigratePage() {
               every business rule gets a JUnit 5 test.
             </p>
           </div>
+          {validation && (
+            <div className="arch-meta">
+              <span className={`bsg-pill ${validation.passed ? "bsg-pill-approved" : "bsg-pill-rejected"}`}>
+                Validation {validation.passed ? "PASSED" : "FAILED"}
+              </span>
+              <span className="section-meta">compile {validation.compileOk ? "ok" : "failed"}</span>
+              <span className="section-meta">
+                BSG coverage {validation.coveragePercent}% ({validation.coveredNodeCount}/{validation.bsgNodeCount})
+              </span>
+            </div>
+          )}
           <TransformationView result={transformation} />
         </section>
       )}

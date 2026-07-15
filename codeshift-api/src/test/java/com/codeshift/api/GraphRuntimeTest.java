@@ -5,10 +5,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.codeshift.bsg.ArchitectureProducer;
 import com.codeshift.bsg.BsgProducer;
 import com.codeshift.bsg.TransformationProducer;
+import com.codeshift.bsg.ValidationProducer;
 import com.codeshift.bsg.model.ArchitecturePlan;
 import com.codeshift.bsg.model.BsgGraph;
 import com.codeshift.bsg.model.BsgNode;
 import com.codeshift.bsg.model.TransformationResult;
+import com.codeshift.bsg.model.ValidationReport;
 import com.codeshift.common.BsgConfidence;
 import com.codeshift.common.BsgNodeType;
 import java.util.List;
@@ -39,8 +41,11 @@ class GraphRuntimeTest {
                             .toList(),
                     List.of(), true, List.of());
 
+    private static final ValidationProducer VALIDATION_STUB = (bsg, tr) ->
+            new ValidationReport(true, bsg.nodes().size(), bsg.nodes().size(), 100, true, List.of());
+
     private GraphRuntime runtime() {
-        return new GraphRuntime(STUB, ARCH_STUB, TRANSFORM_STUB);
+        return new GraphRuntime(STUB, ARCH_STUB, TRANSFORM_STUB, VALIDATION_STUB);
     }
 
     @Test
@@ -58,10 +63,11 @@ class GraphRuntimeTest {
         assertThat(atArch.phase()).isEqualTo("ARCH_REVIEW");
         assertThat(runtime.architectureOf(started.threadId()).moduleMappings()).hasSize(4);
 
-        // Approve architecture → build runs → DELIVERY with generated modules.
+        // Approve architecture → build + validation → DELIVERY.
         GraphRuntime.ResumeResult atBuild = runtime.resume(started.threadId(), "APPROVED");
         assertThat(atBuild.phase()).isEqualTo("DELIVERY");
         assertThat(runtime.transformationOf(started.threadId()).modules()).hasSize(4);
+        assertThat(runtime.validationOf(started.threadId()).passed()).isTrue();
     }
 
     @Test
