@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: codeshift-api
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/codeshift}
     username: ${DB_USER:codeshift}

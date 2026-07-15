@@ -1,9 +1,9 @@
 package com.codeshift.api;
 
 import com.codeshift.bsg.BsgStore;
-import com.codeshift.bsg.repo.BsgRepositories.BsgEdgeRepository;
-import com.codeshift.bsg.repo.BsgRepositories.BsgNodeRepository;
-import com.codeshift.bsg.repo.BsgRepositories.BsgVersionRepository;
+import com.codeshift.bsg.repo.BsgEdgeRepository;
+import com.codeshift.bsg.repo.BsgNodeRepository;
+import com.codeshift.bsg.repo.BsgVersionRepository;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

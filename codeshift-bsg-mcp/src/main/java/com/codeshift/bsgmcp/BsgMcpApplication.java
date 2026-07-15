@@ -1,9 +1,9 @@
 package com.codeshift.bsgmcp;
 
 import com.codeshift.bsg.BsgStore;
-import com.codeshift.bsg.repo.BsgRepositories.BsgEdgeRepository;
-import com.codeshift.bsg.repo.BsgRepositories.BsgNodeRepository;
-import com.codeshift.bsg.repo.BsgRepositories.BsgVersionRepository;
+import com.codeshift.bsg.repo.BsgEdgeRepository;
+import com.codeshift.bsg.repo.BsgNodeRepository;
+import com.codeshift.bsg.repo.BsgVersionRepository;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 import org.springframework.boot.SpringApplication;

@@ -29,44 +29,57 @@ export default function UploadPanel({ onResult, onError, onLoading, loading }: P
   }
 
   return (
-    <section className="panel upload">
-      <h2>Assess a codebase</h2>
-      <p className="muted">
-        Upload a <code>.zip</code> of your Java sources — get a dependency graph, effort estimate
-        and price in seconds. No account.
-      </p>
+    <section className="surface upload-panel">
+      <div className="surface-head stack">
+        <div>
+          <p className="eyebrow">Input</p>
+          <h2>Assess a codebase</h2>
+        </div>
+        <p className="surface-note">
+          Upload a <code>.zip</code> of your Java sources to generate the assessment in seconds.
+        </p>
+      </div>
 
-      <div className="row">
+      <div className="field">
+        <label htmlFor="project-name">Project name</label>
         <input
-          type="file"
-          accept=".zip"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          disabled={loading}
-        />
-        <input
+          id="project-name"
           type="text"
-          placeholder="Project name (optional)"
+          placeholder="Optional label for the report"
           value={name}
           onChange={(e) => setName(e.target.value)}
           disabled={loading}
         />
       </div>
 
-      <div className="row">
+      <div className="field">
+        <label htmlFor="project-zip">Source zip</label>
+        <input
+          id="project-zip"
+          type="file"
+          accept=".zip"
+          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          disabled={loading}
+        />
+        <p className="field-help">{file ? file.name : "No file selected yet."}</p>
+      </div>
+
+      <div className="action-row">
         <button
-          className="primary"
+          className="button button-primary"
           disabled={loading || !file}
           onClick={() => file && run(() => assessZip(file, name))}
         >
-          {loading ? "Assessing…" : "Assess upload"}
+          {loading ? "Analyzing…" : "Analyze upload"}
         </button>
-        <button
-          className="ghost"
-          disabled={loading}
-          onClick={() => run(() => assessPath(SAMPLE_PATH, "sample"))}
-        >
-          Try the sample project
+        <button className="button button-secondary" disabled={loading} onClick={() => run(() => assessPath(SAMPLE_PATH, "sample"))}>
+          Try sample project
         </button>
+      </div>
+
+      <div className="panel-footer">
+        <span>Supports large archives</span>
+        <span>Java source only</span>
       </div>
     </section>
   );

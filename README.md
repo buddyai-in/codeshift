@@ -64,8 +64,11 @@ curl -s -XPOST localhost:8080/public/assess -F file=@your-sources.zip | jq .repo
 # 1. Build + run all unit tests (no DB or API keys needed)
 mvn verify
 
-# 2. (optional) Postgres + Redis for the API/persistence
-docker compose up -d
+# 2. Full local stack: Postgres + Redis + API + web
+docker compose up --build
+
+#    Host ports default to 15432 (Postgres) and 16379 (Redis) to avoid clashes.
+#    Override with POSTGRES_PORT / REDIS_PORT if you want different bindings.
 
 # 3. Run the control-plane API
 mvn -pl codeshift-api spring-boot:run

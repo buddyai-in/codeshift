@@ -7,7 +7,7 @@ import java.util.List;
  * the thing that gets a translation order, a transformation task, and BSG nodes.
  */
 public record SourceModule(
-        String id,               // fully-qualified name, e.g. com.acme.OrderService
+        String id, // fully-qualified name, e.g. com.acme.OrderService
         String simpleName,
         String packageName,
         String filePath,
