@@ -2,6 +2,8 @@ package com.codeshift.graph;
 
 import static org.bsc.langgraph4j.action.AsyncNodeAction.node_async;
 
+import com.codeshift.bsg.BsgProducer;
+import com.codeshift.bsg.model.BsgGraph;
 import com.codeshift.common.Phase;
 import com.codeshift.common.TopologicalSort;
 import com.codeshift.parser.JavaProjectAnalyzer;
@@ -63,12 +65,34 @@ public final class GraphNodes {
             }
             List<String> order = TopologicalSort.leafFirst(modules, edges);
             return Map.of(
-                    "phase", Phase.BSG_REVIEW.name(),
+                    "phase", Phase.ANALYSIS.name(),
                     "module_inventory", modules,
                     "dependency_edges", edges,
                     "topo_order", order,
                     "log", List.of("discovery[" + source + "]: " + modules.size()
                             + " modules, translation order = " + order));
+        });
+    }
+
+    /**
+     * Analysis Agent (BSG builder). Populates the Behavioral Specification Graph
+     * from the discovered modules, then hands it to the human review gate.
+     */
+    public static AsyncNodeAction<MigrationState> analysis(BsgProducer producer) {
+        return node_async(state -> {
+            String projectId = state.projectId().orElse("unknown");
+            List<String> modules = state.topoOrder().isEmpty()
+                    ? state.<List<String>>value("module_inventory").orElse(List.of())
+                    : state.topoOrder();
+            String projectPath = state.<String>value("project_path").orElse(null);
+
+            BsgGraph bsg = producer.produce(projectId, modules, projectPath);
+            return Map.of(
+                    "phase", Phase.BSG_REVIEW.name(),
+                    "bsg", bsg,
+                    "bsg_pending", bsg.pendingCount(),
+                    "log", List.of("analysis: extracted " + bsg.nodes().size()
+                            + " BSG nodes (" + bsg.pendingCount() + " pending review)"));
         });
     }
 

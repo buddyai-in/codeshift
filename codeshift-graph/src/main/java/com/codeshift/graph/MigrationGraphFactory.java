@@ -3,6 +3,7 @@ package com.codeshift.graph;
 import static org.bsc.langgraph4j.StateGraph.END;
 import static org.bsc.langgraph4j.StateGraph.START;
 
+import com.codeshift.bsg.BsgProducer;
 import org.bsc.langgraph4j.CompileConfig;
 import org.bsc.langgraph4j.CompiledGraph;
 import org.bsc.langgraph4j.GraphStateException;
@@ -20,25 +21,29 @@ import org.bsc.langgraph4j.checkpoint.BaseCheckpointSaver;
 public class MigrationGraphFactory {
 
     /**
-     * Compile the Phase 0 spine:
+     * Compile the pipeline through the BSG review gate:
      *
-     * <pre>discovery ─▶ review (interruptBefore) ─▶ finalize ─▶ END</pre>
+     * <pre>discovery ─▶ analysis ─▶ review (interruptBefore) ─▶ finalize ─▶ END</pre>
+     *
+     * @param producer the Analysis Agent that builds the BSG (LLM-backed or skeleton)
      */
-    public CompiledGraph<MigrationState> build(BaseCheckpointSaver checkpointSaver)
-            throws GraphStateException {
+    public CompiledGraph<MigrationState> build(BaseCheckpointSaver checkpointSaver,
+            BsgProducer producer) throws GraphStateException {
         StateGraph<MigrationState> workflow =
                 new StateGraph<>(MigrationState.SCHEMA, MigrationState::new)
                         .addNode("discovery", GraphNodes.discovery())
+                        .addNode("analysis", GraphNodes.analysis(producer))
                         .addNode("review", GraphNodes.review())
                         .addNode("finalize", GraphNodes.finalizeNode())
                         .addEdge(START, "discovery")
-                        .addEdge("discovery", "review")
+                        .addEdge("discovery", "analysis")
+                        .addEdge("analysis", "review")
                         .addEdge("review", "finalize")
                         .addEdge("finalize", END);
 
         return workflow.compile(CompileConfig.builder()
                 .checkpointSaver(checkpointSaver)
-                .interruptBefore("review") // durable human-in-the-loop gate
+                .interruptBefore("review") // durable human-in-the-loop gate (approves the BSG)
                 .build());
     }
 }

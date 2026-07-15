@@ -4,6 +4,7 @@ import com.codeshift.common.BsgConfidence;
 import com.codeshift.common.BsgNodeType;
 import com.codeshift.common.BsgOrigin;
 import com.codeshift.common.HumanStatus;
+import java.io.Serializable;
 
 /**
  * A single behavioral specification (product doc §4.1 / §4.3).
@@ -11,6 +12,8 @@ import com.codeshift.common.HumanStatus;
  * <p>These records are the <em>only</em> way business rules cross the AI boundary:
  * the Analysis Agent emits typed {@code BsgNode}s (via structured output), never
  * free text — so every rule is validatable, human-reviewable, and auditable.
+ *
+ * <p>{@code Serializable} so the graph checkpointer can persist it in run state.
  */
 public record BsgNode(
         String nodeRef,          // stable ref, e.g. "BSG-042"
@@ -22,7 +25,7 @@ public record BsgNode(
         HumanStatus humanStatus,
         BsgOrigin origin,
         String targetCodeLocation,
-        boolean testCoverage) {
+        boolean testCoverage) implements Serializable {
 
     /** Convenience factory for a freshly-extracted, pending rule. */
     public static BsgNode extracted(

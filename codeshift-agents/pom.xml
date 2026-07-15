@@ -8,9 +8,9 @@
     <artifactId>codeshift-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
-  <artifactId>codeshift-graph</artifactId>
-  <name>codeshift-graph</name>
-  <description>langgraph4j orchestration spine: state, nodes, durable human-in-the-loop.</description>
+  <artifactId>codeshift-agents</artifactId>
+  <name>codeshift-agents</name>
+  <description>The intelligence layer. Phase 2: the Analysis Agent (BSG builder).</description>
 
   <dependencies>
     <dependency>
@@ -19,16 +19,19 @@
     </dependency>
     <dependency>
       <groupId>com.codeshift</groupId>
+      <artifactId>codeshift-bsg</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.codeshift</groupId>
       <artifactId>codeshift-parser</artifactId>
     </dependency>
     <dependency>
       <groupId>com.codeshift</groupId>
-      <artifactId>codeshift-bsg</artifactId>
+      <artifactId>codeshift-model-gateway</artifactId>
     </dependency>
-    <!-- langgraph4j: StateGraph, checkpointer, interrupt/resume. -->
     <dependency>
-      <groupId>org.bsc.langgraph4j</groupId>
-      <artifactId>langgraph4j-core</artifactId>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>

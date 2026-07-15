@@ -33,6 +33,11 @@ public class ModelGateway {
         this.profiles = profiles;
     }
 
+    /** True when a chat model (any provider) is on the classpath and configured. */
+    public boolean isAvailable() {
+        return chatModelProvider.getIfAvailable() != null;
+    }
+
     /** A ready-to-use chat client for a capability tier. */
     public ChatClient chat(ModelProfile profile) {
         ChatModel model = chatModelProvider.getIfAvailable();

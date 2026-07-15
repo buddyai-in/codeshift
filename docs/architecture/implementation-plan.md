@@ -103,6 +103,18 @@ see dependency graph + inventory + free assessment report in minutes.
 **Goal:** the **BSG and its trust boundary** exist and are human‑approvable —
 the platform's core IP. First paying migration engagement becomes possible.
 
+> **Status (agent + gate landed):** ✅ `codeshift-agents` with an **Analysis Agent**
+> (`BsgProducer`) that extracts typed, confidence‑scored `BsgNode`s via the Spring AI
+> gateway (`REASONING` profile, structured output) — with a **deterministic skeleton
+> fallback** so the pipeline runs with no LLM key · ✅ `analysis` node inserted in the
+> graph (`discovery → analysis → review → finalize`); the durable **interrupt gate now
+> approves the BSG** · ✅ API surfaces it: `POST /runs` returns `bsgNodeCount`,
+> `GET /runs/{id}/bsg` returns the graph, resume approves it. Verified live end‑to‑end
+> (run → 5 BSG nodes at the gate → approve → ARCHITECTURE).
+> **Remaining:** LLM `bsg_versions`/`bsg_nodes` **persistence** (DB profile) + fork‑on‑edit ·
+> BSG **review UI** (react‑flow rule cards, approve/reject/edit) · the **Architecture
+> Agent** + gate #2 · human‑review queue · eval v1 (golden BSG corpus in CI).
+
 **Deliverables**
 - `analysis` subgraph — three sub‑nodes: (a) structural parse, (b) business‑rule
   extraction, (c) implicit‑rule discovery — each rule a **Pydantic `BsgNode`**

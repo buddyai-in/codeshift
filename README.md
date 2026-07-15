@@ -31,7 +31,8 @@ Java-native agentic stack (chosen for a Spring Boot team; matches the product do
 | `codeshift-bsg` | Typed BSG model (records) + JPA store. The trust boundary. |
 | `codeshift-parser` | **JavaParser** analysis (Discovery): module inventory, dependency graph, messaging detection, `javax.*` migration signal. Deterministic. |
 | `codeshift-assessment` | Free assessment report generator (effort + `$50/kLOC` price estimate + migration signals). The top-of-funnel lead magnet. |
-| `codeshift-graph` | **langgraph4j** spine: `discovery → review (interrupt) → finalize`. Discovery parses a real project via `codeshift-parser`. Framework-agnostic. |
+| `codeshift-agents` | The intelligence layer. **Analysis Agent** (BSG builder): extracts typed, confidence-scored `BsgNode`s via the Spring AI gateway (`REASONING`), with a deterministic skeleton fallback when no LLM key is set. |
+| `codeshift-graph` | **langgraph4j** spine: `discovery → analysis → review (interrupt) → finalize`. Discovery parses a real project; analysis builds the BSG; the gate approves it. Framework-agnostic. |
 | `codeshift-bsg-mcp` | Spring Boot **MCP server** (stdio) exposing the BSG store as typed tools. |
 | `codeshift-java-parser-mcp` | Spring Boot **MCP server** (stdio) exposing JavaParser analysis + assessment as tools. No DB. |
 | `codeshift-api` | The Spring Boot app: **free `/public/assess`** endpoint (zip upload → report), run lifecycle + **SSE stream** + resume-at-gate. Flyway owns the schema. Boots DB-less with `--spring.profiles.active=nodb` for the assessment funnel. |
@@ -70,8 +71,9 @@ docker compose up -d
 mvn -pl codeshift-api spring-boot:run
 #   POST /public/assess           (multipart: file=<source.zip>)  -> FREE assessment report (no auth)
 #   POST /public/assess/path      {"projectPath":"...","projectName":"..."} -> assess a server dir
-#   POST /runs                    {"projectId":"demo","projectPath":"/path/to/src"}  -> real parse, then gate
-#   POST /runs/{threadId}/resume  {"decision":"APPROVED"}   -> resume at the human gate
+#   POST /runs                    {"projectId":"demo","projectPath":"/path/to/src"}  -> parse + build BSG, then gate
+#   GET  /runs/{threadId}/bsg                               -> the BSG awaiting review
+#   POST /runs/{threadId}/resume  {"decision":"APPROVED"}   -> approve the BSG at the human gate
 #   GET  /runs/stream?projectId=demo                        -> SSE live per-node progress
 #   GET  /health
 
@@ -84,9 +86,26 @@ mvn -pl codeshift-bsg-mcp spring-boot:run
 ```
 
 The spine **runs with zero API keys**. The graph uses an in-memory checkpointer,
-and Discovery is deterministic — so `mvn verify` is green with no infrastructure.
-Add a Spring AI provider starter + API key to enable live model calls; add
-`DATABASE_URL` (Postgres) to persist the BSG and run migrations.
+Discovery is deterministic, and the Analysis Agent falls back to a BSG skeleton —
+so `mvn verify` and the whole `discovery → analysis → gate` pipeline are green with
+no infrastructure. Add `DATABASE_URL` (Postgres) to persist the BSG.
+
+### Enable real LLM analysis
+
+The Analysis Agent is LLM-agnostic. To have it extract real business rules instead
+of the skeleton, add a Spring AI provider starter to `codeshift-api/pom.xml` and set
+its key — no code change (the gateway resolves the `REASONING` profile from
+`application.yml`):
+
+```xml
+<dependency>
+  <groupId>org.springframework.ai</groupId>
+  <artifactId>spring-ai-starter-model-anthropic</artifactId>
+</dependency>
+```
+```bash
+export ANTHROPIC_API_KEY=...    # then run the API as usual
+```
 
 ## How this maps to the design
 

@@ -1,7 +1,7 @@
 package com.codeshift.api;
 
+import com.codeshift.bsg.model.BsgGraph;
 import java.util.List;
-import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -50,5 +50,11 @@ public class RunController {
         SseEmitter emitter = new SseEmitter(60_000L);
         runtime.stream(projectId, emitter);
         return emitter;
+    }
+
+    /** The BSG the Analysis Agent produced for a run, for the review gate. */
+    @GetMapping("/{threadId}/bsg")
+    public BsgGraph bsg(@PathVariable String threadId) {
+        return runtime.bsgOf(threadId);
     }
 }

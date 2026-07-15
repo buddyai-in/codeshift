@@ -1,5 +1,7 @@
 package com.codeshift.api;
 
+import com.codeshift.bsg.BsgProducer;
+import com.codeshift.bsg.model.BsgGraph;
 import com.codeshift.graph.MigrationGraphFactory;
 import com.codeshift.graph.MigrationState;
 import java.util.HashMap;
@@ -27,9 +29,9 @@ public class GraphRuntime {
 
     private final CompiledGraph<MigrationState> graph;
 
-    public GraphRuntime() {
+    public GraphRuntime(BsgProducer bsgProducer) {
         try {
-            this.graph = new MigrationGraphFactory().build(new MemorySaver());
+            this.graph = new MigrationGraphFactory().build(new MemorySaver(), bsgProducer);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to compile migration graph", e);
         }
@@ -49,8 +51,16 @@ public class GraphRuntime {
         }
         MigrationState state = graph.invoke(input, cfg)
                 .orElseThrow(() -> new IllegalStateException("Graph produced no state"));
+        long bsgNodes = state.bsg().map(b -> (long) b.nodes().size()).orElse(0L);
         return new StartResult(threadId, state.phase().orElse(null), true,
-                state.topoOrder(), state.log());
+                state.topoOrder(), bsgNodes, state.log());
+    }
+
+    /** The BSG produced by the Analysis Agent for a run, for the review gate. */
+    public BsgGraph bsgOf(String threadId) {
+        RunnableConfig cfg = RunnableConfig.builder().threadId(threadId).build();
+        return graph.getState(cfg).state().bsg()
+                .orElseThrow(() -> new IllegalStateException("No BSG for thread " + threadId));
     }
 
     /** Resume a suspended run at its gate with a human decision. */
@@ -90,7 +100,8 @@ public class GraphRuntime {
 
     /** Response of {@link #start}. */
     public record StartResult(String threadId, String phase, boolean awaitingHuman,
-                              List<String> translationOrder, List<String> log) {}
+                              List<String> translationOrder, long bsgNodeCount,
+                              List<String> log) {}
 
     /** Response of {@link #resume}. */
     public record ResumeResult(String threadId, String phase, String reviewDecision,

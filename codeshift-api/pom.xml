@@ -31,6 +31,10 @@
     </dependency>
     <dependency>
       <groupId>com.codeshift</groupId>
+      <artifactId>codeshift-agents</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.codeshift</groupId>
       <artifactId>codeshift-parser</artifactId>
     </dependency>
     <dependency>

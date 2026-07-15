@@ -1,5 +1,6 @@
 package com.codeshift.graph;
 
+import com.codeshift.bsg.model.BsgGraph;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,11 @@ public class MigrationState extends AgentState {
 
     public Optional<String> reviewDecision() {
         return value("review_decision");
+    }
+
+    /** The BSG produced by the Analysis Agent, awaiting review. */
+    public Optional<BsgGraph> bsg() {
+        return value("bsg");
     }
 
     public List<String> log() {
