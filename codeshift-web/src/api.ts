@@ -167,3 +167,30 @@ export async function resumeRun(threadId: string, decision: string): Promise<Res
     }),
   );
 }
+
+// --- Architecture plan (gate #2) -------------------------------------------
+
+export interface ModuleMapping {
+  moduleId: string;
+  targetClass: string;
+  layer: string;
+}
+export interface ServiceBoundary {
+  name: string;
+  moduleIds: string[];
+}
+export interface MigrationPhase {
+  order: number;
+  name: string;
+  moduleIds: string[];
+}
+export interface ArchitecturePlan {
+  targetStack: string;
+  moduleMappings: ModuleMapping[];
+  microservices: ServiceBoundary[];
+  phases: MigrationPhase[];
+}
+
+export async function getArchitecture(threadId: string): Promise<ArchitecturePlan> {
+  return json(await fetch(`/runs/${threadId}/architecture`));
+}

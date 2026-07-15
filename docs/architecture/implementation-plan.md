@@ -111,9 +111,15 @@ the platform's core IP. First paying migration engagement becomes possible.
 > approves the BSG** · ✅ API surfaces it: `POST /runs` returns `bsgNodeCount`,
 > `GET /runs/{id}/bsg` returns the graph, resume approves it. Verified live end‑to‑end
 > (run → 5 BSG nodes at the gate → approve → ARCHITECTURE).
+> **Update:** ✅ **BSG review UI** shipped — `/migrate` page: upload/sample → run →
+> per‑node approve/reject/edit board → approve gate #1. ✅ **Architecture Agent**
+> (`ArchitectureProducer`) + **gate #2**: infers layers from the approved BSG,
+> clusters service boundaries, and orders migration phases (data→messaging→service→web);
+> the graph now runs `discovery → analysis → BSG gate → architecture → arch gate → BUILD`
+> with two durable interrupts. API: `GET /runs/{id}/architecture`; the UI renders the
+> plan + a second approval. Verified live (approve BSG → ARCH_REVIEW → approve → BUILD).
 > **Remaining:** LLM `bsg_versions`/`bsg_nodes` **persistence** (DB profile) + fork‑on‑edit ·
-> BSG **review UI** (react‑flow rule cards, approve/reject/edit) · the **Architecture
-> Agent** + gate #2 · human‑review queue · eval v1 (golden BSG corpus in CI).
+> LLM refinement in the Architecture Agent · human‑review queue · eval v1 (golden BSG corpus).
 
 **Deliverables**
 - `analysis` subgraph — three sub‑nodes: (a) structural parse, (b) business‑rule

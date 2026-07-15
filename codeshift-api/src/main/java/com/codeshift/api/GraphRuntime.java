@@ -1,6 +1,8 @@
 package com.codeshift.api;
 
+import com.codeshift.bsg.ArchitectureProducer;
 import com.codeshift.bsg.BsgProducer;
+import com.codeshift.bsg.model.ArchitecturePlan;
 import com.codeshift.bsg.model.BsgGraph;
 import com.codeshift.bsg.model.BsgNode;
 import com.codeshift.common.HumanStatus;
@@ -34,9 +36,10 @@ public class GraphRuntime {
 
     private final CompiledGraph<MigrationState> graph;
 
-    public GraphRuntime(BsgProducer bsgProducer) {
+    public GraphRuntime(BsgProducer bsgProducer, ArchitectureProducer architectureProducer) {
         try {
-            this.graph = new MigrationGraphFactory().build(new MemorySaver(), bsgProducer);
+            this.graph = new MigrationGraphFactory()
+                    .build(new MemorySaver(), bsgProducer, architectureProducer);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to compile migration graph", e);
         }
@@ -81,6 +84,13 @@ public class GraphRuntime {
         RunnableConfig cfg = RunnableConfig.builder().threadId(threadId).build();
         return graph.getState(cfg).state().bsg()
                 .orElseThrow(() -> new IllegalStateException("No BSG for thread " + threadId));
+    }
+
+    /** The architecture plan proposed for a run, for gate #2. */
+    public ArchitecturePlan architectureOf(String threadId) {
+        RunnableConfig cfg = RunnableConfig.builder().threadId(threadId).build();
+        return graph.getState(cfg).state().architecture()
+                .orElseThrow(() -> new IllegalStateException("No architecture for thread " + threadId));
     }
 
     /**

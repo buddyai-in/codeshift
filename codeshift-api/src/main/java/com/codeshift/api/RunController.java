@@ -1,5 +1,6 @@
 package com.codeshift.api;
 
+import com.codeshift.bsg.model.ArchitecturePlan;
 import com.codeshift.bsg.model.BsgGraph;
 import java.io.IOException;
 import java.util.List;
@@ -90,5 +91,11 @@ public class RunController {
     @GetMapping("/{threadId}/bsg")
     public BsgGraph bsg(@PathVariable String threadId) {
         return runtime.bsgOf(threadId);
+    }
+
+    /** The architecture plan the Architecture Agent produced, for gate #2. */
+    @GetMapping("/{threadId}/architecture")
+    public ArchitecturePlan architecture(@PathVariable String threadId) {
+        return runtime.architectureOf(threadId);
     }
 }

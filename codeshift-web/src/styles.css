@@ -1090,3 +1090,35 @@ code {
 .bsg-card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .bsg-btn { padding: 7px 14px; font-size: 13px; }
 .bsg-approve-row { margin-top: 16px; align-items: center; gap: 12px; }
+
+/* ---- Architecture view (gate #2) -------------------------------------- */
+.arch-view { display: flex; flex-direction: column; gap: 6px; }
+.arch-meta { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 6px; }
+.arch-table { display: flex; flex-direction: column; gap: 6px; }
+.arch-row {
+  display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center;
+  padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
+}
+.arch-module { font-size: 12px; color: var(--muted-strong); }
+.arch-target { font-size: 12px; color: var(--ink); text-align: right; }
+.arch-layer {
+  font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+  background: var(--accent-soft); text-align: center; white-space: nowrap;
+}
+.arch-layer-controller { color: var(--accent); }
+.arch-layer-service { color: var(--success); }
+.arch-layer-repository { color: var(--warning); }
+.arch-layer-messaging { color: var(--danger); }
+.arch-layer-domain { color: var(--muted-strong); }
+
+.arch-phases { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 10px; }
+.arch-phases li { display: flex; flex-direction: column; gap: 4px; }
+.arch-phases strong { font-size: 14px; }
+.arch-phase-mods { display: flex; gap: 6px; flex-wrap: wrap; }
+.arch-phase-mods code { font-size: 11px; }
+
+.arch-boundaries { display: flex; gap: 10px; flex-wrap: wrap; }
+.arch-boundary {
+  border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px;
+  background: var(--surface); display: flex; flex-direction: column; gap: 2px;
+}

@@ -1,5 +1,6 @@
 package com.codeshift.graph;
 
+import com.codeshift.bsg.model.ArchitecturePlan;
 import com.codeshift.bsg.model.BsgGraph;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,6 +50,11 @@ public class MigrationState extends AgentState {
     /** The BSG produced by the Analysis Agent, awaiting review. */
     public Optional<BsgGraph> bsg() {
         return value("bsg");
+    }
+
+    /** The target architecture proposed by the Architecture Agent, awaiting review. */
+    public Optional<ArchitecturePlan> architecture() {
+        return value("architecture");
     }
 
     public List<String> log() {

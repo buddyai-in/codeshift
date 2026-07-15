@@ -2,7 +2,9 @@ package com.codeshift.graph;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.codeshift.bsg.ArchitectureProducer;
 import com.codeshift.bsg.BsgProducer;
+import com.codeshift.bsg.model.ArchitecturePlan;
 import com.codeshift.bsg.model.BsgGraph;
 import com.codeshift.bsg.model.BsgNode;
 import com.codeshift.common.BsgConfidence;
@@ -16,43 +18,70 @@ import org.bsc.langgraph4j.RunnableConfig;
 import org.bsc.langgraph4j.checkpoint.MemorySaver;
 import org.junit.jupiter.api.Test;
 
-/** The orchestration spine: discovery → analysis (BSG) → durable interrupt/resume. */
+/** The orchestration spine: discovery → analysis → BSG gate → architecture → gate #2. */
 class MigrationGraphTest {
 
-    // A deterministic stand-in for the Analysis Agent: one node per module.
+    // Deterministic stand-in for the Analysis Agent: one node per module.
     private static final BsgProducer STUB_PRODUCER = (projectId, moduleIds, projectPath) ->
             new BsgGraph(projectId, 1, moduleIds.stream().map(id -> BsgNode.extracted(
                     "BSG-" + id, BsgNodeType.BUSINESS_RULE, "Rule for " + id, "d", id,
                     BsgConfidence.MEDIUM)).toList(), List.of());
 
+    // Stand-in for the Architecture Agent.
+    private static final ArchitectureProducer ARCH_STUB = (bsg, topoOrder, stack) ->
+            new ArchitecturePlan(stack,
+                    topoOrder.stream()
+                            .map(id -> new ArchitecturePlan.ModuleMapping(id, id, "SERVICE")).toList(),
+                    List.of(new ArchitecturePlan.ServiceBoundary("Monolith", topoOrder)),
+                    List.of(new ArchitecturePlan.MigrationPhase(1, "All", topoOrder)));
+
+    private CompiledGraph<MigrationState> app() throws Exception {
+        return new MigrationGraphFactory().build(new MemorySaver(), STUB_PRODUCER, ARCH_STUB);
+    }
+
     @Test
-    void interruptsAtGateThenResumesToArchitecture() throws Exception {
-        CompiledGraph<MigrationState> app =
-                new MigrationGraphFactory().build(new MemorySaver(), STUB_PRODUCER);
+    void twoGates_bsgThenArchitectureThenBuild() throws Exception {
+        CompiledGraph<MigrationState> app = app();
         RunnableConfig cfg = RunnableConfig.builder().threadId("t1").build();
 
-        // Run suspends before the human review gate (interruptBefore("review")).
-        Optional<MigrationState> paused = app.invoke(Map.of("project_id", "demo"), cfg);
-        assertThat(paused).isPresent();
-        assertThat(paused.get().topoOrder())
+        // Gate #1: suspends before the BSG review gate with the BSG present.
+        Optional<MigrationState> atBsgGate = app.invoke(Map.of("project_id", "demo"), cfg);
+        assertThat(atBsgGate).isPresent();
+        assertThat(atBsgGate.get().topoOrder())
                 .containsExactly("OrderRepository", "PricingRule", "OrderService", "OrderController");
-        // Analysis ran before the gate: the BSG is present with one node per module.
-        assertThat(paused.get().bsg()).isPresent();
-        assertThat(paused.get().bsg().get().nodes()).hasSize(4);
+        assertThat(atBsgGate.get().bsg().get().nodes()).hasSize(4);
 
-        // A human injects the decision, then we resume from the exact checkpoint.
-        RunnableConfig resumeCfg = app.updateState(cfg, Map.of("review_decision", "APPROVED"));
-        Optional<MigrationState> done = app.invoke(GraphInput.resume(), resumeCfg);
+        // Approve BSG → advances and suspends at gate #2 with an architecture plan.
+        RunnableConfig c2 = app.updateState(cfg, Map.of("review_decision", "APPROVED"));
+        Optional<MigrationState> atArchGate = app.invoke(GraphInput.resume(), c2);
+        assertThat(atArchGate).isPresent();
+        assertThat(atArchGate.get().phase()).contains("ARCH_REVIEW");
+        assertThat(atArchGate.get().architecture()).isPresent();
+        assertThat(atArchGate.get().architecture().get().moduleMappings()).hasSize(4);
+
+        // Approve architecture → completes to BUILD.
+        RunnableConfig c3 = app.updateState(cfg, Map.of("review_decision", "APPROVED"));
+        Optional<MigrationState> done = app.invoke(GraphInput.resume(), c3);
+        assertThat(done).isPresent();
+        assertThat(done.get().phase()).contains("BUILD");
+    }
+
+    @Test
+    void rejectedBsgEndsWithoutArchitecture() throws Exception {
+        CompiledGraph<MigrationState> app = app();
+        RunnableConfig cfg = RunnableConfig.builder().threadId("t3").build();
+
+        app.invoke(Map.of("project_id", "demo"), cfg);
+        RunnableConfig c2 = app.updateState(cfg, Map.of("review_decision", "REJECTED"));
+        Optional<MigrationState> done = app.invoke(GraphInput.resume(), c2);
 
         assertThat(done).isPresent();
-        assertThat(done.get().reviewDecision()).contains("APPROVED");
-        assertThat(done.get().phase()).contains("ARCHITECTURE");
+        assertThat(done.get().architecture()).isEmpty(); // never reached the Architecture Agent
     }
 
     @Test
     void discoveryParsesRealProjectWhenPathGiven() throws Exception {
-        CompiledGraph<MigrationState> app =
-                new MigrationGraphFactory().build(new MemorySaver(), STUB_PRODUCER);
+        CompiledGraph<MigrationState> app = app();
         RunnableConfig cfg = RunnableConfig.builder().threadId("t2").build();
 
         // Phase 1 wiring: a real project path routes discovery through JavaParser.

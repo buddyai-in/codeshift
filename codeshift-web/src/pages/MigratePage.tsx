@@ -1,11 +1,14 @@
 import { useState } from "react";
 import BsgReviewBoard from "../components/BsgReviewBoard";
+import ArchitectureView from "../components/ArchitectureView";
 import {
+  getArchitecture,
   getBsg,
   resumeRun,
   reviewNode,
   startRunPath,
   startRunUpload,
+  type ArchitecturePlan,
   type BsgGraph,
   type HumanStatus,
   type RunStart,
@@ -18,6 +21,7 @@ export default function MigratePage() {
   const [name, setName] = useState("");
   const [run, setRun] = useState<RunStart | null>(null);
   const [bsg, setBsg] = useState<BsgGraph | null>(null);
+  const [architecture, setArchitecture] = useState<ArchitecturePlan | null>(null);
   const [phase, setPhase] = useState<string>("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -49,7 +53,23 @@ export default function MigratePage() {
     }
   }
 
-  async function approveAll() {
+  async function approveBsg() {
+    if (!run) return;
+    setBusy(true);
+    try {
+      const res = await resumeRun(run.threadId, "APPROVED");
+      setPhase(res.phase);
+      if (res.phase === "ARCH_REVIEW") {
+        setArchitecture(await getArchitecture(run.threadId));
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function approveArchitecture() {
     if (!run) return;
     setBusy(true);
     try {
@@ -62,7 +82,9 @@ export default function MigratePage() {
     }
   }
 
-  const approved = phase !== "BSG_REVIEW" && run != null;
+  const bsgApproved = phase !== "BSG_REVIEW" && run != null;
+  const atArchGate = phase === "ARCH_REVIEW";
+  const built = phase === "BUILD";
 
   return (
     <section className="page-stack">
@@ -123,23 +145,52 @@ export default function MigratePage() {
         <section className="surface">
           <div className="surface-head">
             <div>
-              <p className="eyebrow">Gate · {phase.replaceAll("_", " ")}</p>
+              <p className="eyebrow">Gate #1 · BSG review</p>
               <h2>BSG review — {bsg.nodes.length} nodes</h2>
             </div>
             <p className="surface-note">
-              {approved
-                ? "Approved. The run has advanced past the gate."
+              {bsgApproved
+                ? "Approved. The run has advanced past the trust boundary."
                 : "Approve, edit or reject each rule, then approve the BSG to continue."}
             </p>
           </div>
 
-          <BsgReviewBoard bsg={bsg} onReview={onReview} busy={busy || approved} />
+          <BsgReviewBoard bsg={bsg} onReview={onReview} busy={busy || bsgApproved} />
 
           <div className="action-row bsg-approve-row">
-            <button className="button button-primary" disabled={busy || approved} onClick={approveAll}>
-              {approved ? `Advanced to ${phase.replaceAll("_", " ")}` : "Approve BSG & continue"}
+            <button className="button button-primary" disabled={busy || bsgApproved} onClick={approveBsg}>
+              {bsgApproved ? "BSG approved ✓" : "Approve BSG & continue"}
             </button>
-            {approved && <span className="signal-pill signal-pill-ok">Gate passed → {phase}</span>}
+            {bsgApproved && <span className="signal-pill signal-pill-ok">Gate #1 passed</span>}
+          </div>
+        </section>
+      )}
+
+      {run && architecture && (bsgApproved) && (
+        <section className="surface">
+          <div className="surface-head">
+            <div>
+              <p className="eyebrow">Gate #2 · Architecture review</p>
+              <h2>Proposed target architecture</h2>
+            </div>
+            <p className="surface-note">
+              {built
+                ? "Architecture approved. The run is ready to build."
+                : "The Architecture Agent mapped the approved BSG onto a layered target design."}
+            </p>
+          </div>
+
+          <ArchitectureView plan={architecture} />
+
+          <div className="action-row bsg-approve-row">
+            <button
+              className="button button-primary"
+              disabled={busy || built || !atArchGate}
+              onClick={approveArchitecture}
+            >
+              {built ? "Architecture approved ✓" : "Approve architecture & continue"}
+            </button>
+            {built && <span className="signal-pill signal-pill-ok">Gate #2 passed → BUILD</span>}
           </div>
         </section>
       )}

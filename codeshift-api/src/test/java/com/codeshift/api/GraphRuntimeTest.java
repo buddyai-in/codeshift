@@ -2,7 +2,9 @@ package com.codeshift.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.codeshift.bsg.ArchitectureProducer;
 import com.codeshift.bsg.BsgProducer;
+import com.codeshift.bsg.model.ArchitecturePlan;
 import com.codeshift.bsg.model.BsgGraph;
 import com.codeshift.bsg.model.BsgNode;
 import com.codeshift.common.BsgConfidence;
@@ -12,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Exercises the run lifecycle without a Spring context or a database — proving
- * the spine runs with zero infrastructure (in-memory checkpointer, stub agent).
+ * the spine runs with zero infrastructure (in-memory checkpointer, stub agents).
  */
 class GraphRuntimeTest {
 
@@ -21,27 +23,39 @@ class GraphRuntimeTest {
                     "BSG-" + id, BsgNodeType.BUSINESS_RULE, "Rule " + id, "d", id,
                     BsgConfidence.MEDIUM)).toList(), List.of());
 
+    private static final ArchitectureProducer ARCH_STUB = (bsg, topoOrder, stack) ->
+            new ArchitecturePlan(stack,
+                    topoOrder.stream()
+                            .map(id -> new ArchitecturePlan.ModuleMapping(id, id, "SERVICE")).toList(),
+                    List.of(), List.of());
+
+    private GraphRuntime runtime() {
+        return new GraphRuntime(STUB, ARCH_STUB);
+    }
+
     @Test
-    void startPausesAtGateWithBsgThenResumeAdvances() {
-        GraphRuntime runtime = new GraphRuntime(STUB);
+    void twoGatesBsgThenArchitecture() {
+        GraphRuntime runtime = runtime();
 
         GraphRuntime.StartResult started = runtime.start("demo", List.of(), null);
         assertThat(started.awaitingHuman()).isTrue();
         assertThat(started.phase()).isEqualTo("BSG_REVIEW");
-        assertThat(started.translationOrder())
-                .containsExactly("OrderRepository", "PricingRule", "OrderService", "OrderController");
-        // The Analysis Agent ran: the BSG has a node per module and is fetchable.
         assertThat(started.bsgNodeCount()).isEqualTo(4);
         assertThat(runtime.bsgOf(started.threadId()).nodes()).hasSize(4);
 
-        GraphRuntime.ResumeResult resumed = runtime.resume(started.threadId(), "APPROVED");
-        assertThat(resumed.reviewDecision()).isEqualTo("APPROVED");
-        assertThat(resumed.phase()).isEqualTo("ARCHITECTURE");
+        // Approve BSG → pauses at gate #2 with an architecture plan.
+        GraphRuntime.ResumeResult atArch = runtime.resume(started.threadId(), "APPROVED");
+        assertThat(atArch.phase()).isEqualTo("ARCH_REVIEW");
+        assertThat(runtime.architectureOf(started.threadId()).moduleMappings()).hasSize(4);
+
+        // Approve architecture → BUILD.
+        GraphRuntime.ResumeResult atBuild = runtime.resume(started.threadId(), "APPROVED");
+        assertThat(atBuild.phase()).isEqualTo("BUILD");
     }
 
     @Test
     void perNodeReviewEditsAndApprovesInState() {
-        GraphRuntime runtime = new GraphRuntime(STUB);
+        GraphRuntime runtime = runtime();
         GraphRuntime.StartResult started = runtime.start("demo", List.of(), null);
         String ref = runtime.bsgOf(started.threadId()).nodes().get(0).nodeRef();
 

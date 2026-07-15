@@ -2,7 +2,9 @@ package com.codeshift.graph;
 
 import static org.bsc.langgraph4j.action.AsyncNodeAction.node_async;
 
+import com.codeshift.bsg.ArchitectureProducer;
 import com.codeshift.bsg.BsgProducer;
+import com.codeshift.bsg.model.ArchitecturePlan;
 import com.codeshift.bsg.model.BsgGraph;
 import com.codeshift.common.Phase;
 import com.codeshift.common.TopologicalSort;
@@ -103,14 +105,41 @@ public final class GraphNodes {
         });
     }
 
-    public static AsyncNodeAction<MigrationState> finalizeNode() {
+    /** Post-BSG-gate: records the decision. The conditional edge does the routing. */
+    public static AsyncNodeAction<MigrationState> bsgGate() {
         return node_async(state -> {
             String decision = state.reviewDecision().orElse("PENDING");
-            String phase = "APPROVED".equals(decision)
-                    ? Phase.ARCHITECTURE.name() : Phase.DISCOVERY.name();
+            return Map.of("log", List.of("bsg-gate: BSG " + decision));
+        });
+    }
+
+    /**
+     * Architecture Agent (product doc §5, agent #3). Turns the approved BSG into a
+     * target architecture (layers, boundaries, phases), then hands it to gate #2.
+     */
+    public static AsyncNodeAction<MigrationState> architecture(ArchitectureProducer producer) {
+        return node_async(state -> {
+            BsgGraph bsg = state.bsg().orElse(new BsgGraph("unknown", 1, List.of(), List.of()));
+            List<String> order = state.topoOrder();
+            String stack = state.<String>value("target_stack").orElse("JAVA_21_SPRING_BOOT");
+            ArchitecturePlan plan = producer.produce(bsg, order, stack);
+            return Map.of(
+                    "phase", Phase.ARCH_REVIEW.name(),
+                    "architecture", plan,
+                    "log", List.of("architecture: " + plan.moduleMappings().size()
+                            + " modules mapped, " + plan.microservices().size() + " service(s), "
+                            + plan.phases().size() + " phases"));
+        });
+    }
+
+    /** Post-architecture-gate: on approval the run is ready to build. */
+    public static AsyncNodeAction<MigrationState> archGate() {
+        return node_async(state -> {
+            String decision = state.reviewDecision().orElse("PENDING");
+            String phase = "APPROVED".equals(decision) ? Phase.BUILD.name() : Phase.ARCH_REVIEW.name();
             return Map.of(
                     "phase", phase,
-                    "log", List.of("finalize: routing to " + phase + " after decision " + decision));
+                    "log", List.of("arch-gate: architecture " + decision + " → " + phase));
         });
     }
 }
