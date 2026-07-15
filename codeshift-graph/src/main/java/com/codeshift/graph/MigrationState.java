@@ -2,6 +2,7 @@ package com.codeshift.graph;
 
 import com.codeshift.bsg.model.ArchitecturePlan;
 import com.codeshift.bsg.model.BsgGraph;
+import com.codeshift.bsg.model.HardeningResult;
 import com.codeshift.bsg.model.TransformationResult;
 import com.codeshift.bsg.model.ValidationReport;
 import java.util.ArrayList;
@@ -72,6 +73,11 @@ public class MigrationState extends AgentState {
     /** How many times the build step has run (feedback-loop guard). */
     public int buildRetries() {
         return this.<Integer>value("build_retries").orElse(0);
+    }
+
+    /** Security findings + DevOps bundle + Kafka plan from the hardening branch. */
+    public Optional<HardeningResult> hardening() {
+        return value("hardening");
     }
 
     public List<String> log() {

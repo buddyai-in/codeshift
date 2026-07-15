@@ -6,6 +6,7 @@ import static org.bsc.langgraph4j.action.AsyncEdgeAction.edge_async;
 
 import com.codeshift.bsg.ArchitectureProducer;
 import com.codeshift.bsg.BsgProducer;
+import com.codeshift.bsg.HardeningProducer;
 import com.codeshift.bsg.TransformationProducer;
 import com.codeshift.bsg.ValidationProducer;
 import java.util.Map;
@@ -38,11 +39,12 @@ public class MigrationGraphFactory {
      * @param archProducer   Architecture Agent (builds the target architecture)
      * @param transformProducer Transformation + Test Generation agents
      * @param validationProducer Validation Agent (compile + BSG coverage)
+     * @param hardeningProducer  Security / Cloud / Messaging agents
      */
     public CompiledGraph<MigrationState> build(BaseCheckpointSaver checkpointSaver,
             BsgProducer bsgProducer, ArchitectureProducer archProducer,
-            TransformationProducer transformProducer, ValidationProducer validationProducer)
-            throws GraphStateException {
+            TransformationProducer transformProducer, ValidationProducer validationProducer,
+            HardeningProducer hardeningProducer) throws GraphStateException {
         final int maxBuildRetries = 3;
         StateGraph<MigrationState> workflow =
                 new StateGraph<>(MigrationState.SCHEMA, MigrationState::new)
@@ -55,6 +57,7 @@ public class MigrationGraphFactory {
                         .addNode("arch_gate", GraphNodes.archGate())
                         .addNode("build", GraphNodes.build(transformProducer))
                         .addNode("validation", GraphNodes.validation(validationProducer))
+                        .addNode("hardening", GraphNodes.hardening(hardeningProducer))
                         .addNode("delivery", GraphNodes.delivery())
                         .addEdge(START, "discovery")
                         .addEdge("discovery", "analysis")
@@ -79,7 +82,8 @@ public class MigrationGraphFactory {
                                     }
                                     return s.buildRetries() < maxBuildRetries ? "retry" : "failed";
                                 }),
-                                Map.of("passed", "delivery", "retry", "build", "failed", "delivery"))
+                                Map.of("passed", "hardening", "retry", "build", "failed", "hardening"))
+                        .addEdge("hardening", "delivery")
                         .addEdge("delivery", END);
 
         return workflow.compile(CompileConfig.builder()

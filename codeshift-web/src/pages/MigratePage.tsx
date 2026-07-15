@@ -2,9 +2,11 @@ import { useState } from "react";
 import BsgReviewBoard from "../components/BsgReviewBoard";
 import ArchitectureView from "../components/ArchitectureView";
 import TransformationView from "../components/TransformationView";
+import HardeningView from "../components/HardeningView";
 import {
   getArchitecture,
   getBsg,
+  getHardening,
   getTransformation,
   getValidation,
   resumeRun,
@@ -13,6 +15,7 @@ import {
   startRunUpload,
   type ArchitecturePlan,
   type BsgGraph,
+  type HardeningResult,
   type HumanStatus,
   type RunStart,
   type TransformationResult,
@@ -29,6 +32,7 @@ export default function MigratePage() {
   const [architecture, setArchitecture] = useState<ArchitecturePlan | null>(null);
   const [transformation, setTransformation] = useState<TransformationResult | null>(null);
   const [validation, setValidation] = useState<ValidationReport | null>(null);
+  const [hardening, setHardening] = useState<HardeningResult | null>(null);
   const [phase, setPhase] = useState<string>("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -85,6 +89,7 @@ export default function MigratePage() {
       if (res.phase === "DELIVERY") {
         setTransformation(await getTransformation(run.threadId));
         setValidation(await getValidation(run.threadId));
+        setHardening(await getHardening(run.threadId));
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -230,6 +235,22 @@ export default function MigratePage() {
             </div>
           )}
           <TransformationView result={transformation} />
+        </section>
+      )}
+
+      {run && hardening && (
+        <section className="surface">
+          <div className="surface-head">
+            <div>
+              <p className="eyebrow">Hardening · Security · Cloud · Messaging</p>
+              <h2>Security, deployment &amp; messaging</h2>
+            </div>
+            <p className="surface-note">
+              Real source scan, a deployable Docker/K8s/CI bundle, and a Kafka topic plan for any
+              detected MQ systems.
+            </p>
+          </div>
+          <HardeningView result={hardening} />
         </section>
       )}
     </section>

@@ -233,3 +233,26 @@ export interface ValidationReport {
 export async function getValidation(threadId: string): Promise<ValidationReport> {
   return json(await fetch(`/runs/${threadId}/validation`));
 }
+
+// --- Hardening (security + devops + messaging) -----------------------------
+
+export interface SecurityFinding {
+  severity: string;
+  message: string;
+  location: string;
+}
+export interface TopicProposal {
+  name: string;
+  partitions: number;
+  partitionKey: string;
+  consumerGroup: string;
+}
+export interface HardeningResult {
+  security: { findings: SecurityFinding[]; highCount: number };
+  devops: { dockerfile: string; kubernetesManifest: string; ciPipeline: string };
+  messaging: { sourceSystems: string[]; topics: TopicProposal[] };
+}
+
+export async function getHardening(threadId: string): Promise<HardeningResult> {
+  return json(await fetch(`/runs/${threadId}/hardening`));
+}

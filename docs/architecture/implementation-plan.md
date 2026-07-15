@@ -184,6 +184,20 @@ Boot migration delivered as a repo with generated tests. First $2.5k project.
 feedback loop — plus the security/cloud/messaging branches that ship on every
 migration.
 
+> **Status (validation + hardening landed):** ✅ **Validation Agent** (compile +
+> BSG coverage) with the **bounded feedback loop** (validation failure → targeted
+> rebuild, max 3, guarded by a counter). ✅ **Hardening** branch on every validated
+> run: **Security Agent** (real regex/secret + `javax.*` + SQL‑concat scan over the
+> source), **Cloud/DevOps Agent** (generates real Dockerfile + K8s + GitHub Actions),
+> **Messaging Agent** (Kafka topic plan from the MQ systems Discovery detected).
+> Full pipeline now: `discovery → analysis → BSG gate → architecture → arch gate →
+> build → validation → hardening → delivery`. API `GET /runs/{id}/{validation,hardening}`;
+> UI renders validation summary, security findings, the DevOps bundle (tabbed) and the
+> Kafka plan. Verified live end‑to‑end.
+> **Remaining:** Environment‑in‑the‑Loop **dual‑run** (needs a runnable legacy image) ·
+> real CVE/SAST scanners + compliance mapping · Kafka Connect bridge config · git‑mcp
+> delivery (PR of the output repo).
+
 **Deliverables**
 - `validation` subgraph (all 5 checks): compile, unit+integration, **dual‑run**
   (`sandbox-mcp.dual_run` + output comparator), BSG coverage, perf comparison.

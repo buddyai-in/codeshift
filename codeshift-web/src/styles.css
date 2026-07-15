@@ -1144,3 +1144,12 @@ code {
   border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
 }
 .xform-test code { font-size: 12px; }
+
+/* ---- Hardening view --------------------------------------------------- */
+.hard-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+.hard-tab {
+  padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line);
+  background: transparent; color: var(--muted-strong); font-size: 13px; font-weight: 600;
+  cursor: pointer;
+}
+.hard-tab-active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-soft); }

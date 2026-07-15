@@ -4,11 +4,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.codeshift.bsg.ArchitectureProducer;
 import com.codeshift.bsg.BsgProducer;
+import com.codeshift.bsg.HardeningProducer;
 import com.codeshift.bsg.TransformationProducer;
 import com.codeshift.bsg.ValidationProducer;
 import com.codeshift.bsg.model.ArchitecturePlan;
 import com.codeshift.bsg.model.BsgGraph;
 import com.codeshift.bsg.model.BsgNode;
+import com.codeshift.bsg.model.HardeningResult;
+import com.codeshift.bsg.model.HardeningResult.DevOpsBundle;
+import com.codeshift.bsg.model.HardeningResult.MessagingPlan;
+import com.codeshift.bsg.model.HardeningResult.SecurityReport;
 import com.codeshift.bsg.model.TransformationResult;
 import com.codeshift.bsg.model.ValidationReport;
 import com.codeshift.common.BsgConfidence;
@@ -52,9 +57,15 @@ class MigrationGraphTest {
     private static final ValidationProducer VALIDATION_STUB = (bsg, tr) ->
             new ValidationReport(true, bsg.nodes().size(), bsg.nodes().size(), 100, true, List.of());
 
+    // Stand-in for the hardening agents.
+    private static final HardeningProducer HARDENING_STUB = (arch, tr, path, messaging) ->
+            new HardeningResult(new SecurityReport(List.of(), 0),
+                    new DevOpsBundle("FROM", "kind: Deployment", "name: CI"),
+                    new MessagingPlan(messaging, List.of()));
+
     private CompiledGraph<MigrationState> app() throws Exception {
-        return new MigrationGraphFactory()
-                .build(new MemorySaver(), STUB_PRODUCER, ARCH_STUB, TRANSFORM_STUB, VALIDATION_STUB);
+        return new MigrationGraphFactory().build(new MemorySaver(),
+                STUB_PRODUCER, ARCH_STUB, TRANSFORM_STUB, VALIDATION_STUB, HARDENING_STUB);
     }
 
     @Test
@@ -83,8 +94,8 @@ class MigrationGraphTest {
         assertThat(done).isPresent();
         assertThat(done.get().phase()).contains("DELIVERY");
         assertThat(done.get().transformation().get().modules()).hasSize(4);
-        assertThat(done.get().validation()).isPresent();
         assertThat(done.get().validation().get().passed()).isTrue();
+        assertThat(done.get().hardening()).isPresent(); // hardening ran before delivery
     }
 
     @Test

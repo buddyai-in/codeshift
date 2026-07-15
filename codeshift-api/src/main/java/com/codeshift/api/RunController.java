@@ -2,6 +2,7 @@ package com.codeshift.api;
 
 import com.codeshift.bsg.model.ArchitecturePlan;
 import com.codeshift.bsg.model.BsgGraph;
+import com.codeshift.bsg.model.HardeningResult;
 import com.codeshift.bsg.model.TransformationResult;
 import com.codeshift.bsg.model.ValidationReport;
 import java.io.IOException;
@@ -111,5 +112,11 @@ public class RunController {
     @GetMapping("/{threadId}/validation")
     public ValidationReport validation(@PathVariable String threadId) {
         return runtime.validationOf(threadId);
+    }
+
+    /** Hardening: security findings + DevOps bundle + Kafka plan. */
+    @GetMapping("/{threadId}/hardening")
+    public HardeningResult hardening(@PathVariable String threadId) {
+        return runtime.hardeningOf(threadId);
     }
 }
