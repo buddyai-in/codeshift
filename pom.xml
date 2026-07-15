@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- Inherit Spring Boot dependency + plugin management. -->
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.5.0</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>com.codeshift</groupId>
+  <artifactId>codeshift-parent</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>CodeShift</name>
+  <description>Agentic legacy-modernisation platform — Phase 0 spine (Java/Spring)</description>
+
+  <modules>
+    <module>codeshift-common</module>
+    <module>codeshift-model-gateway</module>
+    <module>codeshift-bsg</module>
+    <module>codeshift-graph</module>
+    <module>codeshift-bsg-mcp</module>
+    <module>codeshift-api</module>
+  </modules>
+
+  <properties>
+    <java.version>21</java.version>
+    <spring-ai.version>1.0.0</spring-ai.version>
+    <langgraph4j.version>1.6.0</langgraph4j.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- Spring AI BOM: the LLM-agnostic layer (ChatClient/ChatModel over any provider). -->
+      <dependency>
+        <groupId>org.springframework.ai</groupId>
+        <artifactId>spring-ai-bom</artifactId>
+        <version>${spring-ai.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- langgraph4j: JVM port of LangGraph (StateGraph, checkpointer, human-in-the-loop). -->
+      <dependency>
+        <groupId>org.bsc.langgraph4j</groupId>
+        <artifactId>langgraph4j-core</artifactId>
+        <version>${langgraph4j.version}</version>
+      </dependency>
+      <!-- Internal modules. -->
+      <dependency>
+        <groupId>com.codeshift</groupId>
+        <artifactId>codeshift-common</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.codeshift</groupId>
+        <artifactId>codeshift-model-gateway</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.codeshift</groupId>
+        <artifactId>codeshift-bsg</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.codeshift</groupId>
+        <artifactId>codeshift-graph</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+</project>

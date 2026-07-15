@@ -2,8 +2,18 @@
 
 This directory contains a **fully agentic, LLM‑agnostic architecture design** for
 the CodeShift legacy‑modernisation platform, re‑expressing the 8‑agent pipeline
-from the product document on **LangChain + LangGraph** with a pluggable **MCP**
-capability plane.
+from the product document on the **LangChain / LangGraph** model with a pluggable
+**MCP** capability plane.
+
+> **Reference implementation is Java-native.** The design documents below use
+> Python LangChain/LangGraph names for the concepts, but the actual build in this
+> repo (the Phase 0 spine, top-level modules `codeshift-*`) is **Java 21 + Spring
+> Boot**, using the JVM members of the same ecosystem:
+> **Spring AI** (LLM-agnostic `ChatClient` = the model gateway),
+> **langgraph4j** (the LangGraph `StateGraph`, checkpointer, human-in-the-loop),
+> and the **MCP Java SDK** (the capability plane). Every concept below maps 1:1;
+> only the language changes. This choice matches the product doc's Java/Spring
+> stack and the team's expertise. See the root [`README.md`](../../README.md).
 
 ## Documents
 

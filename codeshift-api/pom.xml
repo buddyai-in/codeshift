@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.codeshift</groupId>
+    <artifactId>codeshift-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>codeshift-api</artifactId>
+  <name>codeshift-api</name>
+  <description>Control plane: run lifecycle + live agent-log streaming (SSE). The Spring Boot app.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.codeshift</groupId>
+      <artifactId>codeshift-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.codeshift</groupId>
+      <artifactId>codeshift-model-gateway</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.codeshift</groupId>
+      <artifactId>codeshift-bsg</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.codeshift</groupId>
+      <artifactId>codeshift-graph</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- To enable live LLM calls, add a Spring AI provider starter + its API key, e.g.:
+         <dependency>
+           <groupId>org.springframework.ai</groupId>
+           <artifactId>spring-ai-starter-model-anthropic</artifactId>
+         </dependency>
+         The ModelGateway picks up whatever ChatModel bean is present. -->
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>

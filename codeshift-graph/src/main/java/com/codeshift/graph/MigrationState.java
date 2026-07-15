@@ -1,0 +1,51 @@
+package com.codeshift.graph;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.bsc.langgraph4j.state.AgentState;
+import org.bsc.langgraph4j.state.Channel;
+import org.bsc.langgraph4j.state.Channels;
+
+/**
+ * Shared graph state (langgraph4j).
+ *
+ * <p>Kept small and serialisable: it holds <em>references</em> (project id, BSG
+ * version id, topological order, cursors, budget) — never heavy payloads. Large
+ * artifacts (BSG nodes, code, test results) live in Postgres/S3 and are fetched
+ * on demand. That is what lets a run scale to 100k+ LOC without bloating the
+ * checkpoint.
+ *
+ * <p>The SCHEMA declares reducer channels; {@code log} appends across steps,
+ * everything else overwrites with the latest value.
+ */
+public class MigrationState extends AgentState {
+
+    public static final Map<String, Channel<?>> SCHEMA =
+            Map.of("log", Channels.appender(ArrayList::new));
+
+    public MigrationState(Map<String, Object> initData) {
+        super(initData);
+    }
+
+    public Optional<String> phase() {
+        return value("phase");
+    }
+
+    public Optional<String> projectId() {
+        return value("project_id");
+    }
+
+    public List<String> topoOrder() {
+        return this.<List<String>>value("topo_order").orElseGet(List::of);
+    }
+
+    public Optional<String> reviewDecision() {
+        return value("review_decision");
+    }
+
+    public List<String> log() {
+        return this.<List<String>>value("log").orElseGet(List::of);
+    }
+}

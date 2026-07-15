@@ -11,29 +11,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
         with:
-          enable-cache: true
+          distribution: temurin
+          java-version: "21"
+          cache: maven
 
-      - name: Set up Python
-        run: uv python install 3.11
+      - name: Build + test (all modules)
+        run: mvn -B verify
 
-      - name: Sync workspace
-        run: uv sync --all-extras
-
-      - name: Lint
-        run: uv run ruff check .
-
-      - name: Type-check
-        run: uv run mypy packages apps mcp
-
-      - name: Test
-        run: uv run pytest -q
-
-  # Placeholder for the Phase 0 eval gate (BSG-extraction / transformation evals).
-  # Wired up in Phase 1 once the Analysis Agent and golden corpora exist.
+  # Placeholder for the Phase 0/1 eval gate (BSG-extraction / transformation evals).
+  # Wired up once the Analysis Agent and golden corpora exist.
   evals:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "eval gate stub — see docs/architecture/implementation-plan.md (P0/P1)"
+      - run: echo "eval gate stub — see docs/architecture/implementation-plan.md"

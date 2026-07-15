@@ -1,0 +1,39 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: codeshift-api
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/codeshift}
+    username: ${DB_USER:codeshift}
+    password: ${DB_PASSWORD:codeshift}
+  jpa:
+    hibernate:
+      ddl-auto: none        # Flyway owns the schema
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+# --- LLM-agnostic model gateway -------------------------------------------
+# Each capability profile maps to a "provider:model". Swap providers/models here
+# with no code change. To actually call a model, add a Spring AI provider starter
+# (e.g. spring-ai-starter-model-anthropic) and set its API key.
+codeshift:
+  model:
+    profiles:
+      REASONING:
+        model: anthropic:claude-opus-4-8
+        temperature: 0.0
+      CODEGEN:
+        model: anthropic:claude-sonnet-4-6
+        temperature: 0.0
+      CHEAP:
+        model: anthropic:claude-haiku-4-5-20251001
+        temperature: 0.0
+      EMBED:
+        model: openai:text-embedding-3-small
+    fallbacks:
+      REASONING: openai:gpt-4.1
+      CODEGEN: openai:gpt-4.1-mini

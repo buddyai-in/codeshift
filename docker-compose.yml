@@ -1,6 +1,7 @@
 # Local dev dependencies for the Phase 0 spine.
-# Postgres 16 with the pgvector extension (BSG graph + embeddings) and Redis
-# (streaming / cache / queue). Bring up with: docker compose up -d
+# Postgres 16 with pgvector (BSG graph + embeddings) and Redis (cache / streams).
+# The schema is applied by Flyway when codeshift-api starts — not here.
+# Bring up with: docker compose up -d
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -12,8 +13,6 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      # Migrations are applied on first boot in filename order.
-      - ./db/migrations:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U codeshift"]
       interval: 5s
