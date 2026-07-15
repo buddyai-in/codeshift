@@ -30,13 +30,13 @@ public class RunController {
         this.runtime = runtime;
     }
 
-    public record StartRequest(String projectId, List<String> moduleInventory) {}
+    public record StartRequest(String projectId, List<String> moduleInventory, String projectPath) {}
 
     public record ResumeRequest(String decision) {}
 
     @PostMapping
     public GraphRuntime.StartResult start(@RequestBody StartRequest req) {
-        return runtime.start(req.projectId(), req.moduleInventory());
+        return runtime.start(req.projectId(), req.moduleInventory(), req.projectPath());
     }
 
     @PostMapping("/{threadId}/resume")

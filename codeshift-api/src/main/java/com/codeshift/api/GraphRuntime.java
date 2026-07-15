@@ -36,11 +36,14 @@ public class GraphRuntime {
     }
 
     /** Start a run; it advances to the human review gate and suspends there. */
-    public StartResult start(String projectId, List<String> modules) {
+    public StartResult start(String projectId, List<String> modules, String projectPath) {
         String threadId = UUID.randomUUID().toString();
         RunnableConfig cfg = RunnableConfig.builder().threadId(threadId).build();
         Map<String, Object> input = new HashMap<>();
         input.put("project_id", projectId);
+        if (projectPath != null && !projectPath.isBlank()) {
+            input.put("project_path", projectPath); // routes discovery through JavaParser
+        }
         if (modules != null && !modules.isEmpty()) {
             input.put("module_inventory", modules);
         }

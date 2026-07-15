@@ -1,4 +1,4 @@
-package com.codeshift.graph;
+package com.codeshift.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -17,5 +17,13 @@ class TopologicalSortTest {
         // Leaves (no deps) come first: C before B before A.
         assertThat(order.indexOf("C")).isLessThan(order.indexOf("B"));
         assertThat(order.indexOf("B")).isLessThan(order.indexOf("A"));
+        assertThat(TopologicalSort.hasCycle(modules, edges)).isFalse();
+    }
+
+    @Test
+    void detectsCycle() {
+        List<String> modules = List.of("X", "Y");
+        List<String[]> edges = List.of(new String[] {"X", "Y"}, new String[] {"Y", "X"});
+        assertThat(TopologicalSort.hasCycle(modules, edges)).isTrue();
     }
 }

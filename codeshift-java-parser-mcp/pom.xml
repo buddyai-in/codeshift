@@ -8,28 +8,31 @@
     <artifactId>codeshift-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
-  <artifactId>codeshift-graph</artifactId>
-  <name>codeshift-graph</name>
-  <description>langgraph4j orchestration spine: state, nodes, durable human-in-the-loop.</description>
+  <artifactId>codeshift-java-parser-mcp</artifactId>
+  <name>codeshift-java-parser-mcp</name>
+  <description>MCP server exposing JavaParser project analysis as tools to agents.</description>
 
   <dependencies>
     <dependency>
       <groupId>com.codeshift</groupId>
-      <artifactId>codeshift-common</artifactId>
+      <artifactId>codeshift-parser</artifactId>
     </dependency>
     <dependency>
       <groupId>com.codeshift</groupId>
-      <artifactId>codeshift-parser</artifactId>
-    </dependency>
-    <!-- langgraph4j: StateGraph, checkpointer, interrupt/resume. -->
-    <dependency>
-      <groupId>org.bsc.langgraph4j</groupId>
-      <artifactId>langgraph4j-core</artifactId>
+      <artifactId>codeshift-assessment</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-test</artifactId>
-      <scope>test</scope>
+      <groupId>org.springframework.ai</groupId>
+      <artifactId>spring-ai-starter-mcp-server</artifactId>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
 </project>

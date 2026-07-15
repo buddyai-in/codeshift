@@ -1,0 +1,16 @@
+# Java parser MCP server — stdio transport, no web server, no database.
+spring:
+  main:
+    web-application-type: none
+    banner-mode: off
+  ai:
+    mcp:
+      server:
+        stdio: true
+        name: codeshift-java-parser
+        version: 0.1.0
+
+# stdio MCP servers must not log to stdout (it corrupts the protocol stream).
+logging:
+  pattern:
+    console:

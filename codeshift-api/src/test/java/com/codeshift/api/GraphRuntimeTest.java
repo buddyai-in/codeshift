@@ -15,7 +15,7 @@ class GraphRuntimeTest {
     void startPausesAtGateThenResumeAdvances() {
         GraphRuntime runtime = new GraphRuntime();
 
-        GraphRuntime.StartResult started = runtime.start("demo", List.of());
+        GraphRuntime.StartResult started = runtime.start("demo", List.of(), null);
         assertThat(started.awaitingHuman()).isTrue();
         assertThat(started.phase()).isEqualTo("BSG_REVIEW");
         assertThat(started.translationOrder())

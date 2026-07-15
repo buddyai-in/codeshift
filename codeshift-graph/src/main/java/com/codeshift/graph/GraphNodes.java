@@ -3,6 +3,10 @@ package com.codeshift.graph;
 import static org.bsc.langgraph4j.action.AsyncNodeAction.node_async;
 
 import com.codeshift.common.Phase;
+import com.codeshift.common.TopologicalSort;
+import com.codeshift.parser.JavaProjectAnalyzer;
+import com.codeshift.parser.ProjectAnalysis;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import org.bsc.langgraph4j.action.AsyncNodeAction;
@@ -41,15 +45,29 @@ public final class GraphNodes {
 
     public static AsyncNodeAction<MigrationState> discovery() {
         return node_async(state -> {
-            List<String> modules = state.<List<String>>value("module_inventory").orElse(DEFAULT_MODULES);
-            List<String[]> edges = state.<List<String[]>>value("dependency_edges").orElse(DEFAULT_EDGES);
+            // Phase 1: if a real project path is supplied, parse it with JavaParser;
+            // otherwise fall back to the built-in sample so the spine runs offline.
+            String projectPath = state.<String>value("project_path").orElse(null);
+            List<String> modules;
+            List<String[]> edges;
+            String source;
+            if (projectPath != null && !projectPath.isBlank()) {
+                ProjectAnalysis analysis = JavaProjectAnalyzer.analyze(Path.of(projectPath));
+                modules = analysis.moduleIds();
+                edges = analysis.dependencyEdges();
+                source = "JavaParser(" + projectPath + ")";
+            } else {
+                modules = state.<List<String>>value("module_inventory").orElse(DEFAULT_MODULES);
+                edges = state.<List<String[]>>value("dependency_edges").orElse(DEFAULT_EDGES);
+                source = "sample";
+            }
             List<String> order = TopologicalSort.leafFirst(modules, edges);
             return Map.of(
                     "phase", Phase.BSG_REVIEW.name(),
                     "module_inventory", modules,
                     "dependency_edges", edges,
                     "topo_order", order,
-                    "log", List.of("discovery: " + modules.size()
+                    "log", List.of("discovery[" + source + "]: " + modules.size()
                             + " modules, translation order = " + order));
         });
     }

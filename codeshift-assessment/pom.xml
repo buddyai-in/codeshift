@@ -8,11 +8,19 @@
     <artifactId>codeshift-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
-  <artifactId>codeshift-common</artifactId>
-  <name>codeshift-common</name>
-  <description>Shared enums, vocabulary, and pure utilities. Foundation layer.</description>
+  <artifactId>codeshift-assessment</artifactId>
+  <name>codeshift-assessment</name>
+  <description>Free assessment report generator — the top-of-funnel product.</description>
 
   <dependencies>
+    <dependency>
+      <groupId>com.codeshift</groupId>
+      <artifactId>codeshift-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.codeshift</groupId>
+      <artifactId>codeshift-parser</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>

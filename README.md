@@ -26,12 +26,15 @@ Java-native agentic stack (chosen for a Spring Boot team; matches the product do
 
 | Module | Responsibility |
 | --- | --- |
-| `codeshift-common` | Shared enums / vocabulary. No business logic. |
+| `codeshift-common` | Shared enums / vocabulary + Kahn topological sort. No business logic. |
 | `codeshift-model-gateway` | LLM-agnostic gateway: capability **profiles** (reasoning/codegen/cheap/embed) → `provider:model`, over Spring AI. Cost estimation. |
 | `codeshift-bsg` | Typed BSG model (records) + JPA store. The trust boundary. |
-| `codeshift-graph` | **langgraph4j** spine: `discovery → review (interrupt) → finalize`, Kahn topological sort. Framework-agnostic. |
+| `codeshift-parser` | **JavaParser** analysis (Discovery): module inventory, dependency graph, messaging detection, `javax.*` migration signal. Deterministic. |
+| `codeshift-assessment` | Free assessment report generator (effort + `$50/kLOC` price estimate + migration signals). The top-of-funnel lead magnet. |
+| `codeshift-graph` | **langgraph4j** spine: `discovery → review (interrupt) → finalize`. Discovery parses a real project via `codeshift-parser`. Framework-agnostic. |
 | `codeshift-bsg-mcp` | Spring Boot **MCP server** (stdio) exposing the BSG store as typed tools. |
-| `codeshift-api` | The Spring Boot app: run lifecycle + **SSE live agent-log stream** + resume-at-gate. Flyway owns the schema. |
+| `codeshift-java-parser-mcp` | Spring Boot **MCP server** (stdio) exposing JavaParser analysis + assessment as tools. No DB. |
+| `codeshift-api` | The Spring Boot app: **free `/public/assess`** endpoint (zip upload → report), run lifecycle + **SSE stream** + resume-at-gate. Flyway owns the schema. |
 
 ## Quick start
 
@@ -44,10 +47,16 @@ docker compose up -d
 
 # 3. Run the control-plane API
 mvn -pl codeshift-api spring-boot:run
-#   POST /runs                    {"projectId":"demo"}      -> starts a run, returns the gate payload
+#   POST /public/assess           (multipart: file=<source.zip>)  -> FREE assessment report (no auth)
+#   POST /public/assess/path      {"projectPath":"...","projectName":"..."} -> assess a server dir
+#   POST /runs                    {"projectId":"demo","projectPath":"/path/to/src"}  -> real parse, then gate
 #   POST /runs/{threadId}/resume  {"decision":"APPROVED"}   -> resume at the human gate
 #   GET  /runs/stream?projectId=demo                        -> SSE live per-node progress
 #   GET  /health
+
+# Try the free assessment against the bundled sample project (no DB needed):
+#   curl -s -XPOST localhost:8080/public/assess/path -H 'Content-Type: application/json' \
+#     -d '{"projectPath":"codeshift-parser/src/test/resources/sample-project","projectName":"sample"}'
 
 # 4. Run the BSG MCP server (stdio; needs Postgres)
 mvn -pl codeshift-bsg-mcp spring-boot:run

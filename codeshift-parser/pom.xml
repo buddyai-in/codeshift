@@ -8,11 +8,19 @@
     <artifactId>codeshift-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
   </parent>
-  <artifactId>codeshift-common</artifactId>
-  <name>codeshift-common</name>
-  <description>Shared enums, vocabulary, and pure utilities. Foundation layer.</description>
+  <artifactId>codeshift-parser</artifactId>
+  <name>codeshift-parser</name>
+  <description>Language parsers. Phase 1: JavaParser project analysis (inventory, dependency graph, messaging).</description>
 
   <dependencies>
+    <dependency>
+      <groupId>com.codeshift</groupId>
+      <artifactId>codeshift-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.github.javaparser</groupId>
+      <artifactId>javaparser-core</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>

@@ -69,6 +69,16 @@ one LangSmith trace with token cost. Model provider is swappable by env var.
 and gets a dependency graph + module inventory + assessment report — no account.
 This is the v1 lead magnet and the first demo.
 
+> **Status (backend core landed):** ✅ `codeshift-parser` (JavaParser: inventory,
+> import‑based dependency graph, Kahn leaf‑first order, JMS/MQ/AMQP/Kafka
+> detection, `javax.*` signal) · ✅ `codeshift-assessment` (effort + `$50/kLOC`
+> price + migration signals) · ✅ `codeshift-java-parser-mcp` (analysis exposed as
+> MCP tools) · ✅ `discovery` node wired to real parsing (with offline sample
+> fallback) · ✅ public no‑auth `POST /public/assess` (zip upload) + `/public/assess/path`.
+> **Remaining:** React upload UI + react‑flow graph view · S3 ingest (SSE‑encrypted,
+> per‑upload prefix) · PDF rendering of the report · initial BSG skeleton written
+> via `bsg-mcp`.
+
 **Deliverables**
 - `java-parser-mcp` (JVM sidecar): JavaParser + Spring config XML → `parse_module`,
   `build_dependency_graph`, `detect_messaging_patterns`. **Deterministic**
