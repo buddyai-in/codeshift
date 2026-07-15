@@ -1022,3 +1022,71 @@ code {
     height: 430px;
   }
 }
+
+/* ---- BSG review board (Migrate page) ---------------------------------- */
+.button-ghost {
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  color: var(--accent);
+  border-radius: 12px;
+  padding: 10px 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.bsg-review { display: flex; flex-direction: column; gap: 16px; margin-top: 6px; }
+.bsg-summary { display: flex; gap: 8px; flex-wrap: wrap; }
+.bsg-pill {
+  font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--accent-soft);
+}
+.bsg-pill-pending { color: var(--warning); }
+.bsg-pill-approved { color: var(--success); }
+.bsg-pill-modified { color: var(--accent); }
+.bsg-pill-rejected { color: var(--danger); }
+
+.bsg-board {
+  display: grid; gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+.bsg-card {
+  border: 1px solid var(--line); border-left: 4px solid var(--line-strong);
+  border-radius: 14px; padding: 14px; background: var(--surface);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.bsg-card-approved { border-left-color: var(--success); }
+.bsg-card-rejected { border-left-color: var(--danger); opacity: 0.75; }
+.bsg-card-modified { border-left-color: var(--accent); }
+
+.bsg-card-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.bsg-ref { font-weight: 800; font-size: 13px; color: var(--ink); }
+.bsg-type {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted);
+}
+.bsg-confidence, .bsg-status {
+  font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+  margin-left: auto;
+}
+.bsg-confidence { margin-left: auto; }
+.bsg-status { margin-left: 0; }
+.bsg-confidence-high { color: var(--success); background: var(--accent-soft); }
+.bsg-confidence-medium { color: var(--warning); background: var(--accent-soft); }
+.bsg-confidence-low { color: var(--danger); background: var(--accent-soft); }
+.bsg-status-pending { color: var(--muted-strong); background: var(--accent-soft); }
+.bsg-status-approved { color: var(--success); background: var(--accent-soft); }
+.bsg-status-rejected { color: var(--danger); background: var(--accent-soft); }
+.bsg-status-modified { color: var(--accent); background: var(--accent-soft); }
+
+.bsg-title-input, .bsg-desc-input {
+  width: 100%; border: 1px solid var(--line); border-radius: 10px;
+  padding: 8px 10px; background: var(--surface-strong); color: var(--ink);
+  font: inherit;
+}
+.bsg-title-input { font-weight: 700; }
+.bsg-desc-input { resize: vertical; }
+.bsg-source {
+  font-size: 11px; color: var(--muted);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.bsg-card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.bsg-btn { padding: 7px 14px; font-size: 13px; }
+.bsg-approve-row { margin-top: 16px; align-items: center; gap: 12px; }

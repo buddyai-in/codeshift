@@ -68,3 +68,102 @@ export async function assessPath(
     }),
   );
 }
+
+// --- Migration runs + BSG review -------------------------------------------
+
+export type NodeType =
+  | "BUSINESS_RULE" | "DATA_FLOW" | "STATE_TRANSITION" | "EXTERNAL_CONTRACT"
+  | "EDGE_CASE" | "IMPLICIT_RULE" | "MESSAGING_CONTRACT";
+export type Confidence = "HIGH" | "MEDIUM" | "LOW";
+export type HumanStatus = "PENDING" | "APPROVED" | "REJECTED" | "MODIFIED";
+
+export interface BsgNode {
+  nodeRef: string;
+  nodeType: NodeType;
+  title: string;
+  description: string;
+  sourceLocation: string | null;
+  confidence: Confidence;
+  humanStatus: HumanStatus;
+  origin: string;
+  targetCodeLocation: string | null;
+  testCoverage: boolean;
+}
+
+export interface BsgGraph {
+  projectId: string;
+  versionNumber: number;
+  nodes: BsgNode[];
+  edges: unknown[];
+}
+
+export interface RunStart {
+  threadId: string;
+  phase: string;
+  awaitingHuman: boolean;
+  translationOrder: string[];
+  bsgNodeCount: number;
+  log: string[];
+}
+
+export interface ResumeResult {
+  threadId: string;
+  phase: string;
+  reviewDecision: string;
+  log: string[];
+}
+
+async function json<T>(res: Response): Promise<T> {
+  if (!res.ok) {
+    throw new Error(`Request failed (${res.status}). ${await res.text().catch(() => "")}`);
+  }
+  return res.json();
+}
+
+/** Start a migration run from an uploaded source zip (runs discovery + analysis). */
+export async function startRunUpload(file: File, projectName: string): Promise<RunStart> {
+  const form = new FormData();
+  form.append("file", file);
+  if (projectName) form.append("projectName", projectName);
+  return json(await fetch("/runs/upload", { method: "POST", body: form }));
+}
+
+/** Start a migration run from a server-accessible source directory (sample demo). */
+export async function startRunPath(projectPath: string, projectId: string): Promise<RunStart> {
+  return json(
+    await fetch("/runs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId, projectPath }),
+    }),
+  );
+}
+
+export async function getBsg(threadId: string): Promise<BsgGraph> {
+  return json(await fetch(`/runs/${threadId}/bsg`));
+}
+
+/** Record a review decision + optional edits on one BSG node. */
+export async function reviewNode(
+  threadId: string,
+  nodeRef: string,
+  patch: { status?: HumanStatus; title?: string; description?: string },
+): Promise<BsgGraph> {
+  return json(
+    await fetch(`/runs/${threadId}/bsg/nodes/${encodeURIComponent(nodeRef)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    }),
+  );
+}
+
+export async function resumeRun(threadId: string, decision: string): Promise<ResumeResult> {
+  return json(
+    await fetch(`/runs/${threadId}/resume`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ decision }),
+    }),
+  );
+}

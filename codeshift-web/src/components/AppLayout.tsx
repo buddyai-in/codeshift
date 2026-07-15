@@ -12,6 +12,7 @@ interface AppLayoutProps {
 
 const navItems = [
   { to: "/", label: "Dashboard", end: true },
+  { to: "/migrate", label: "Migrate", end: false },
   { to: "/projects", label: "Projects", end: false },
   { to: "/playbooks", label: "Playbooks", end: false },
   { to: "/settings", label: "Settings", end: false },

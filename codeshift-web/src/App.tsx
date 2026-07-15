@@ -4,6 +4,7 @@ import type { AssessmentResult } from "./api";
 import AppLayout from "./components/AppLayout";
 import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
+import MigratePage from "./pages/MigratePage";
 import MaintenancePage from "./pages/MaintenancePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import PlaybooksPage from "./pages/PlaybooksPage";
@@ -116,6 +117,7 @@ export default function App() {
             />
           }
         />
+        <Route path="migrate" element={<MigratePage />} />
         <Route path="projects" element={<ProjectsPage report={result?.report ?? null} />} />
         <Route path="playbooks" element={<PlaybooksPage />} />
         <Route path="settings" element={<SettingsPage email={sessionEmail} theme={theme} onToggleTheme={toggleTheme} />} />

@@ -2,8 +2,13 @@ package com.codeshift.api;
 
 import com.codeshift.bsg.BsgProducer;
 import com.codeshift.bsg.model.BsgGraph;
+import com.codeshift.bsg.model.BsgNode;
+import com.codeshift.common.HumanStatus;
 import com.codeshift.graph.MigrationGraphFactory;
 import com.codeshift.graph.MigrationState;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,11 +61,57 @@ public class GraphRuntime {
                 state.topoOrder(), bsgNodes, state.log());
     }
 
+    /** Start a run from an uploaded source zip (extracted to a temp dir, then cleaned up). */
+    public StartResult startFromZip(String projectName, InputStream zipStream) {
+        Path dir = null;
+        try {
+            dir = ZipExtractor.extractToTempDir(zipStream);
+            // start() runs discovery + analysis synchronously (up to the gate), so the
+            // temp dir is only needed during this call.
+            return start(projectName, List.of(), dir.toString());
+        } catch (IOException e) {
+            throw new IllegalStateException("Could not read zip: " + e.getMessage(), e);
+        } finally {
+            ZipExtractor.deleteRecursively(dir);
+        }
+    }
+
     /** The BSG produced by the Analysis Agent for a run, for the review gate. */
     public BsgGraph bsgOf(String threadId) {
         RunnableConfig cfg = RunnableConfig.builder().threadId(threadId).build();
         return graph.getState(cfg).state().bsg()
                 .orElseThrow(() -> new IllegalStateException("No BSG for thread " + threadId));
+    }
+
+    /**
+     * Record a human review decision (and optional edits) on one BSG node, writing
+     * it back into the run's durable state. This is the per-node review workflow
+     * behind the gate — the reviewer curates the BSG before approving the whole thing.
+     */
+    public BsgGraph updateBsgNode(String threadId, String nodeRef, String status,
+            String title, String description) {
+        RunnableConfig cfg = RunnableConfig.builder().threadId(threadId).build();
+        BsgGraph current = bsgOf(threadId);
+        List<BsgNode> updated = current.nodes().stream()
+                .map(n -> n.nodeRef().equals(nodeRef) ? applyEdit(n, status, title, description) : n)
+                .toList();
+        BsgGraph next = new BsgGraph(current.projectId(), current.versionNumber(),
+                updated, current.edges());
+        try {
+            graph.updateState(cfg, Map.of("bsg", next));
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to update BSG node " + nodeRef, e);
+        }
+        return next;
+    }
+
+    private static BsgNode applyEdit(BsgNode n, String status, String title, String description) {
+        HumanStatus st = status != null && !status.isBlank()
+                ? HumanStatus.valueOf(status) : n.humanStatus();
+        String t = title != null && !title.isBlank() ? title : n.title();
+        String d = description != null && !description.isBlank() ? description : n.description();
+        return new BsgNode(n.nodeRef(), n.nodeType(), t, d, n.sourceLocation(),
+                n.confidence(), st, n.origin(), n.targetCodeLocation(), n.testCoverage());
     }
 
     /** Resume a suspended run at its gate with a human decision. */

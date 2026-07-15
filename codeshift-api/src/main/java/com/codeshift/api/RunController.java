@@ -1,14 +1,20 @@
 package com.codeshift.api;
 
 import com.codeshift.bsg.model.BsgGraph;
+import java.io.IOException;
 import java.util.List;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
@@ -38,6 +44,34 @@ public class RunController {
     public GraphRuntime.StartResult start(@RequestBody StartRequest req) {
         return runtime.start(req.projectId(), req.moduleInventory(), req.projectPath());
     }
+
+    /** Start a run from an uploaded source zip — the browser entry to the pipeline. */
+    @PostMapping(path = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public GraphRuntime.StartResult startUpload(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "projectName", required = false) String projectName) {
+        if (file.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Empty upload");
+        }
+        String name = projectName != null ? projectName : "uploaded-project";
+        try {
+            return runtime.startFromZip(name, file.getInputStream());
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bad zip: " + e.getMessage());
+        }
+    }
+
+    /** Record a review decision + optional edits on one BSG node. */
+    @PutMapping("/{threadId}/bsg/nodes/{nodeRef}")
+    public BsgGraph reviewNode(
+            @PathVariable String threadId,
+            @PathVariable String nodeRef,
+            @RequestBody NodeReview review) {
+        return runtime.updateBsgNode(threadId, nodeRef, review.status(),
+                review.title(), review.description());
+    }
+
+    public record NodeReview(String status, String title, String description) {}
 
     @PostMapping("/{threadId}/resume")
     public GraphRuntime.ResumeResult resume(

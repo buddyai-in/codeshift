@@ -38,4 +38,21 @@ class GraphRuntimeTest {
         assertThat(resumed.reviewDecision()).isEqualTo("APPROVED");
         assertThat(resumed.phase()).isEqualTo("ARCHITECTURE");
     }
+
+    @Test
+    void perNodeReviewEditsAndApprovesInState() {
+        GraphRuntime runtime = new GraphRuntime(STUB);
+        GraphRuntime.StartResult started = runtime.start("demo", List.of(), null);
+        String ref = runtime.bsgOf(started.threadId()).nodes().get(0).nodeRef();
+
+        var updated = runtime.updateBsgNode(started.threadId(), ref,
+                "APPROVED", "Edited title", "Edited description");
+
+        var node = updated.nodes().stream().filter(n -> n.nodeRef().equals(ref)).findFirst().orElseThrow();
+        assertThat(node.humanStatus().name()).isEqualTo("APPROVED");
+        assertThat(node.title()).isEqualTo("Edited title");
+        // Persisted into durable run state (re-read confirms it).
+        assertThat(runtime.bsgOf(started.threadId()).nodes())
+                .anyMatch(n -> n.nodeRef().equals(ref) && n.title().equals("Edited title"));
+    }
 }
