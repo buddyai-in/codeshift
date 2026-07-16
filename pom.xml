@@ -28,6 +28,7 @@
     <module>codeshift-sandbox</module>
     <module>codeshift-datashift</module>
     <module>codeshift-agents</module>
+    <module>codeshift-evals</module>
     <module>codeshift-graph</module>
     <module>codeshift-bsg-mcp</module>
     <module>codeshift-java-parser-mcp</module>
