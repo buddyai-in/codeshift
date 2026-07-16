@@ -5,6 +5,7 @@ import com.codeshift.bsg.BsgProducer;
 import com.codeshift.bsg.BsgStore;
 import com.codeshift.bsg.HardeningProducer;
 import com.codeshift.bsg.ProjectStore;
+import com.codeshift.bsg.TenantStore;
 import com.codeshift.bsg.TransformationProducer;
 import com.codeshift.bsg.ValidationProducer;
 import com.codeshift.bsg.model.ArchitecturePlan;
@@ -59,6 +60,7 @@ public class GraphRuntime {
     // Persistence is profile-gated (absent under the nodb profile), so it's optional here.
     private final ObjectProvider<ProjectStore> projectStore;
     private final ObjectProvider<BsgStore> bsgStore;
+    private final ObjectProvider<TenantStore> tenantStore;
 
     // threadId -> persisted project id, so the BSG gate auto-persists exactly once per run.
     private final Map<String, String> persistedProjects = new ConcurrentHashMap<>();
@@ -66,9 +68,10 @@ public class GraphRuntime {
     public GraphRuntime(BsgProducer bsgProducer, ArchitectureProducer architectureProducer,
             TransformationProducer transformationProducer, ValidationProducer validationProducer,
             HardeningProducer hardeningProducer, ObjectProvider<ProjectStore> projectStore,
-            ObjectProvider<BsgStore> bsgStore) {
+            ObjectProvider<BsgStore> bsgStore, ObjectProvider<TenantStore> tenantStore) {
         this.projectStore = projectStore;
         this.bsgStore = bsgStore;
+        this.tenantStore = tenantStore;
         try {
             this.graph = new MigrationGraphFactory().build(new MemorySaver(),
                     bsgProducer, architectureProducer, transformationProducer, validationProducer,
@@ -215,7 +218,8 @@ public class GraphRuntime {
             BsgGraph approved = bsgOf(threadId);
             String projectName = approved.projectId() != null && !approved.projectId().isBlank()
                     ? approved.projectId() : "migration-" + threadId.substring(0, 8);
-            UUID projectId = projects.create(projectName, "JAVA", DEFAULT_TARGET_STACK);
+            UUID orgId = currentOrgId();
+            UUID projectId = projects.create(orgId, projectName, "JAVA", DEFAULT_TARGET_STACK);
 
             int versionNumber = store.nextVersionNumber(projectId);
             BsgGraph toSave = new BsgGraph(projectId.toString(), versionNumber,
@@ -232,6 +236,14 @@ public class GraphRuntime {
                     threadId, e.getMessage());
             return null;
         }
+    }
+
+    /** The calling tenant (from the request's X-Tenant-Id), or the default org. */
+    private UUID currentOrgId() {
+        return TenantContext.current().orElseGet(() -> {
+            TenantStore ts = tenantStore.getIfAvailable();
+            return ts != null ? ts.defaultOrgId() : null;
+        });
     }
 
     /** Stream live per-node updates (SSE) as a fresh run advances to the gate. */

@@ -18,6 +18,7 @@ import com.codeshift.bsg.model.TransformationResult;
 import com.codeshift.bsg.model.ValidationReport;
 import com.codeshift.bsg.BsgStore;
 import com.codeshift.bsg.ProjectStore;
+import com.codeshift.bsg.TenantStore;
 import com.codeshift.common.BsgConfidence;
 import com.codeshift.common.BsgNodeType;
 import java.util.List;
@@ -70,8 +71,9 @@ class GraphRuntimeTest {
     private GraphRuntime runtime() {
         ObjectProvider<ProjectStore> noProjects = none();
         ObjectProvider<BsgStore> noBsg = none();
+        ObjectProvider<TenantStore> noTenants = none();
         return new GraphRuntime(STUB, ARCH_STUB, TRANSFORM_STUB, VALIDATION_STUB, HARDENING_STUB,
-                noProjects, noBsg);
+                noProjects, noBsg, noTenants);
     }
 
     @Test

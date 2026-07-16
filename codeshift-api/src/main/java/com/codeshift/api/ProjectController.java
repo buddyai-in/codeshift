@@ -5,6 +5,7 @@ import com.codeshift.bsg.DebtProducer;
 import com.codeshift.bsg.PerformanceProducer;
 import com.codeshift.bsg.ProjectStore;
 import com.codeshift.bsg.RequirementsProducer;
+import com.codeshift.bsg.TenantStore;
 import com.codeshift.bsg.model.BsgGraph;
 import com.codeshift.bsg.model.DebtReport;
 import com.codeshift.bsg.model.PerformanceReport;
@@ -38,15 +39,17 @@ public class ProjectController {
 
     private final ObjectProvider<ProjectStore> projectStore;
     private final ObjectProvider<BsgStore> bsgStore;
+    private final ObjectProvider<TenantStore> tenantStore;
     private final RequirementsProducer requirements;
     private final DebtProducer debt;
     private final PerformanceProducer performance;
 
     public ProjectController(ObjectProvider<ProjectStore> projectStore,
-            ObjectProvider<BsgStore> bsgStore, RequirementsProducer requirements,
-            DebtProducer debt, PerformanceProducer performance) {
+            ObjectProvider<BsgStore> bsgStore, ObjectProvider<TenantStore> tenantStore,
+            RequirementsProducer requirements, DebtProducer debt, PerformanceProducer performance) {
         this.projectStore = projectStore;
         this.bsgStore = bsgStore;
+        this.tenantStore = tenantStore;
         this.requirements = requirements;
         this.debt = debt;
         this.performance = performance;
@@ -70,6 +73,20 @@ public class ProjectController {
         return s;
     }
 
+    private TenantStore tenants() {
+        TenantStore s = tenantStore.getIfAvailable();
+        if (s == null) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "Persistence disabled (running with the nodb profile). Start with a database.");
+        }
+        return s;
+    }
+
+    /** The calling tenant (from X-Tenant-Id), or the default org for header-less requests. */
+    private UUID currentOrg() {
+        return TenantContext.current().orElseGet(() -> tenants().defaultOrgId());
+    }
+
     public record CreateProjectRequest(String name, String sourceLanguage, String targetStack) {}
 
     public record CreatedProject(String projectId) {}
@@ -80,15 +97,30 @@ public class ProjectController {
 
     public record FeatureResponse(String versionId, int versionNumber, BsgGraph bsg) {}
 
+    public record CreateOrgRequest(String name) {}
+
+    public record CreatedOrg(String orgId) {}
+
+    /** Create a tenant (organization) — step one of the self-serve onboarding wizard. */
+    @PostMapping("/orgs")
+    public CreatedOrg createOrg(@RequestBody CreateOrgRequest req) {
+        return new CreatedOrg(tenants().create(req.name()).toString());
+    }
+
+    @GetMapping("/orgs")
+    public List<TenantStore.OrgSummary> listOrgs() {
+        return tenants().list();
+    }
+
     @PostMapping("/projects")
     public CreatedProject create(@RequestBody CreateProjectRequest req) {
-        UUID id = projects().create(req.name(), req.sourceLanguage(), req.targetStack());
+        UUID id = projects().create(currentOrg(), req.name(), req.sourceLanguage(), req.targetStack());
         return new CreatedProject(id.toString());
     }
 
     @GetMapping("/projects")
     public List<ProjectStore.ProjectSummary> list() {
-        return projects().list();
+        return projects().list(currentOrg());
     }
 
     @GetMapping("/projects/{projectId}/bsg/versions")
@@ -134,7 +166,7 @@ public class ProjectController {
     public PortfolioReport portfolio() {
         List<ProjectHealth> health = new ArrayList<>();
         int scoreSum = 0;
-        for (ProjectStore.ProjectSummary p : projects().list()) {
+        for (ProjectStore.ProjectSummary p : projects().list(currentOrg())) {
             List<BsgStore.VersionSummary> vs = bsg().listVersions(p.id());
             int score = 0;
             String grade = "A";

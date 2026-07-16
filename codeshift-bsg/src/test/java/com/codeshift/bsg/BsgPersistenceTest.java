@@ -26,7 +26,8 @@ class BsgPersistenceTest {
 
     @Test
     void persistsVersionedBsgAsAnAuditTrail() {
-        UUID projectId = projectStore.create("acme-orders", "JAVA_8", "JAVA_21_SPRING_BOOT");
+        UUID orgId = UUID.randomUUID();
+        UUID projectId = projectStore.create(orgId, "acme-orders", "JAVA_8", "JAVA_21_SPRING_BOOT");
 
         // Version 1 — the migrated BSG.
         BsgGraph v1 = new BsgGraph(projectId.toString(), 1, List.of(
