@@ -60,6 +60,14 @@ public class ProjectStore {
         projects.save(p);
     }
 
+    /** Set a project's USD budget (the metering guardrail ceiling). */
+    @Transactional
+    public void setBudget(UUID id, BigDecimal budgetUsd) {
+        MigrationProjectEntity p = load(id);
+        p.setBudgetUsd(budgetUsd);
+        projects.save(p);
+    }
+
     /** True when the project still has budget headroom for another charge. */
     @Transactional(readOnly = true)
     public boolean withinBudget(UUID id, BigDecimal prospectiveUsd) {

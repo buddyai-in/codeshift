@@ -1,6 +1,7 @@
 package com.codeshift.api;
 
 import com.codeshift.bsg.BsgStore;
+import com.codeshift.bsg.MeteringStore;
 import com.codeshift.bsg.ProjectStore;
 import com.codeshift.bsg.TenantStore;
 import com.codeshift.bsg.repo.BsgEdgeRepository;
@@ -8,6 +9,7 @@ import com.codeshift.bsg.repo.BsgNodeRepository;
 import com.codeshift.bsg.repo.BsgVersionRepository;
 import com.codeshift.bsg.repo.MigrationProjectRepository;
 import com.codeshift.bsg.repo.OrganizationRepository;
+import com.codeshift.bsg.repo.UsageEventRepository;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -42,5 +44,10 @@ public class PersistenceConfig {
     @Bean
     TenantStore tenantStore(OrganizationRepository orgs) {
         return new TenantStore(orgs);
+    }
+
+    @Bean
+    MeteringStore meteringStore(UsageEventRepository usage, ProjectStore projects) {
+        return new MeteringStore(usage, projects);
     }
 }
