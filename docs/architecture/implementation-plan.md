@@ -288,9 +288,25 @@ contract, public pricing page. $50k ARR trajectory.
 > → 402 → invoice), `BsgExtractionEvalTest` (gate + a deliberately‑regressed
 > producer), `ComplianceReporterTest`/`ComplianceApiTest`, live `nodb` compliance
 > smoke test, and `npm run build`.
-> **Remaining (needs external services / infra):** live Razorpay charge + webhook,
-> per‑tenant KMS/S3 + BYOK model keys, on‑prem/in‑VPC model option, partner/reseller
-> plumbing, Product Hunt polish.
+> **Enterprise hardening — now built (ports with dev adapters; production adapters
+> are a config swap):**
+> ✅ **Razorpay webhook + payment lifecycle**: checkout persists a pending payment;
+> `POST /billing/webhook/razorpay` verifies the `X-Razorpay-Signature` HMAC‑SHA256
+> (real algorithm, constant‑time) before advancing it to PAID/FAILED — a forged
+> webhook is rejected (400). ✅ **Per‑tenant KMS + BYOK model keys**: `SecretCipher`
+> port + `LocalAesGcmCipher` (AES‑256‑GCM, random IV, tamper‑detecting) encrypts a
+> tenant's own provider key at rest; `TenantSecretStore` is org‑scoped and never
+> echoes plaintext (AWS KMS per‑tenant CMK is a drop‑in). ✅ **On‑prem/in‑VPC model
+> option**: per‑tenant `ModelDeployment` (CLOUD/ON_PREM/IN_VPC + endpoint + model)
+> and `TenantModelResolver` route a tenant's calls to its own endpoint with its BYOK
+> key; others use the managed cloud default. ✅ **Per‑tenant S3 artifact store**:
+> `ArtifactStore` port + `LocalArtifactStore` (tenant‑namespaced, traversal‑safe);
+> S3 is a drop‑in adapter.
+> Verified: `WebhookFlowTest`, `LocalAesGcmCipherTest`/`TenantKeyFlowTest`,
+> `ModelDeploymentFlowTest`, `LocalArtifactStoreTest`/`ArtifactApiTest`.
+> **Remaining (needs live third‑party accounts / infra):** a real Razorpay charge
+> against a live merchant account, a managed AWS KMS/S3 deployment, a running
+> on‑prem/in‑VPC model endpoint, partner/reseller plumbing, Product Hunt polish.
 
 **Deliverables**
 - Razorpay billing + self‑serve onboarding wizard; usage metering tied to the
