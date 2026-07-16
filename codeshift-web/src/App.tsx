@@ -4,9 +4,12 @@ import type { AssessmentResult } from "./api";
 import AppLayout from "./components/AppLayout";
 import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
+import BillingPage from "./pages/BillingPage";
+import CompliancePage from "./pages/CompliancePage";
 import DataShiftPage from "./pages/DataShiftPage";
 import MigratePage from "./pages/MigratePage";
 import NewCodePage from "./pages/NewCodePage";
+import OnboardingPage from "./pages/OnboardingPage";
 import PortfolioPage from "./pages/PortfolioPage";
 import MaintenancePage from "./pages/MaintenancePage";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -121,8 +124,11 @@ export default function App() {
           }
         />
         <Route path="migrate" element={<MigratePage />} />
+        <Route path="onboarding" element={<OnboardingPage />} />
         <Route path="new-code" element={<NewCodePage />} />
         <Route path="datashift" element={<DataShiftPage />} />
+        <Route path="billing" element={<BillingPage />} />
+        <Route path="compliance" element={<CompliancePage />} />
         <Route path="portfolio" element={<PortfolioPage />} />
         <Route path="projects" element={<ProjectsPage report={result?.report ?? null} />} />
         <Route path="playbooks" element={<PlaybooksPage />} />

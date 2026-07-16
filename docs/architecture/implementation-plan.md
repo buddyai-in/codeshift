@@ -270,6 +270,28 @@ contract, public pricing page. $50k ARR trajectory.
 
 **Goal:** self‑serve, multi‑tenant, evaluated, launchable.
 
+> **Status — Phase 6 commercialisation spine built:**
+> ✅ **Multi‑tenancy**: every project belongs to an org; reads are scoped to the
+> tenant (`X-Tenant-Id` → `TenantContext`/`TenantFilter`), mirroring the `org_id`
+> column — application‑level row‑level security (Postgres RLS can enforce the same).
+> ✅ **Usage metering + budgets → invoices**: every metered call is priced via the
+> gateway `CostEstimator` and charged to a per‑project USD budget; a call that would
+> exceed it is refused (402); invoices roll usage up per project with a payment
+> intent behind a `PaymentProvider` port (`ManualPaymentProvider` dev impl until
+> Razorpay keys/webhook are wired). ✅ **Eval suite as release gate**
+> (`codeshift-evals`): golden corpus + `BsgEvaluator` (precision/recall/F1) certify
+> a producer/provider before it ships; a regression fails the gate. ✅ **Vertical
+> compliance packs** (`codeshift-compliance`): PCI‑DSS + HIPAA control templates +
+> BSG‑coverage report packs (covered vs gap controls with remediation). ✅ **Self‑
+> serve onboarding wizard** + **Billing** and **Compliance** UI pages.
+> Verified end‑to‑end: H2 `TenantIsolationTest`, `BillingFlowTest` (budget guardrail
+> → 402 → invoice), `BsgExtractionEvalTest` (gate + a deliberately‑regressed
+> producer), `ComplianceReporterTest`/`ComplianceApiTest`, live `nodb` compliance
+> smoke test, and `npm run build`.
+> **Remaining (needs external services / infra):** live Razorpay charge + webhook,
+> per‑tenant KMS/S3 + BYOK model keys, on‑prem/in‑VPC model option, partner/reseller
+> plumbing, Product Hunt polish.
+
 **Deliverables**
 - Razorpay billing + self‑serve onboarding wizard; usage metering tied to the
   cost‑accounting layer (per‑project token budgets → invoices).

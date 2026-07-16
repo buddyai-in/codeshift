@@ -1,5 +1,29 @@
 // Types mirror the Java DTOs (AssessmentResult / AssessmentReport / DependencyGraphView).
 
+// --- Tenant context (multi-tenancy) ----------------------------------------
+// The active org is sent as X-Tenant-Id so the backend scopes reads to this tenant.
+
+const TENANT_KEY = "codeshift-tenant";
+let activeTenant: string | null =
+  typeof window !== "undefined" ? window.localStorage.getItem(TENANT_KEY) : null;
+
+export function setActiveTenant(orgId: string | null): void {
+  activeTenant = orgId;
+  if (typeof window !== "undefined") {
+    if (orgId) window.localStorage.setItem(TENANT_KEY, orgId);
+    else window.localStorage.removeItem(TENANT_KEY);
+  }
+}
+
+export function getActiveTenant(): string | null {
+  return activeTenant;
+}
+
+/** Merge the tenant header (if set) into a request's headers. */
+function tenantHeaders(base: Record<string, string> = {}): Record<string, string> {
+  return activeTenant ? { ...base, "X-Tenant-Id": activeTenant } : base;
+}
+
 export interface AssessmentReport {
   projectName: string;
   moduleCount: number;
@@ -289,14 +313,14 @@ export async function createProject(
   return json(
     await fetch("/projects", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: tenantHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify({ name, sourceLanguage, targetStack }),
     }),
   );
 }
 
 export async function listProjects(): Promise<ProjectSummary[]> {
-  return json(await fetch("/projects"));
+  return json(await fetch("/projects", { headers: tenantHeaders() }));
 }
 
 export async function getBsgVersions(projectId: string): Promise<VersionSummary[]> {
@@ -329,7 +353,7 @@ export interface PortfolioReport {
 }
 
 export async function getPortfolio(): Promise<PortfolioReport> {
-  return json(await fetch("/portfolio"));
+  return json(await fetch("/portfolio", { headers: tenantHeaders() }));
 }
 
 /** Seed an initial BSG so features can be added on top (demo helper). */
@@ -380,6 +404,155 @@ export async function convertDdl(ddl: string): Promise<DataShiftResult> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ddl }),
+    }),
+  );
+}
+
+// --- Tenants (organizations) -----------------------------------------------
+
+export interface OrgSummary {
+  id: string;
+  name: string;
+}
+
+export async function createOrg(name: string): Promise<{ orgId: string }> {
+  return json(
+    await fetch("/orgs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    }),
+  );
+}
+
+export async function listOrgs(): Promise<OrgSummary[]> {
+  return json(await fetch("/orgs"));
+}
+
+// --- Billing: usage metering, budgets, invoices ----------------------------
+
+export interface UsageRecord {
+  id: string;
+  projectId: string;
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  costUsd: number;
+}
+export interface BudgetResponse {
+  budgetUsd: number;
+  spentUsd: number;
+  remainingUsd: number;
+}
+export interface UsageResponse extends BudgetResponse {
+  costUsd: number;
+}
+export interface InvoiceLineItem {
+  projectId: string;
+  projectName: string;
+  inputTokens: number;
+  outputTokens: number;
+  calls: number;
+  amountUsd: number;
+}
+export interface PaymentIntent {
+  id: string;
+  provider: string;
+  status: string;
+  amountUsd: number;
+  checkoutRef: string;
+}
+export interface Invoice {
+  orgId: string;
+  currency: string;
+  lineItems: InvoiceLineItem[];
+  totalUsd: number;
+  payment: PaymentIntent;
+}
+
+export async function recordUsage(
+  projectId: string,
+  model: string,
+  inputTokens: number,
+  outputTokens: number,
+): Promise<UsageResponse> {
+  const res = await fetch("/billing/usage", {
+    method: "POST",
+    headers: tenantHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ projectId, model, inputTokens, outputTokens }),
+  });
+  if (res.status === 402) {
+    throw new Error(`Budget exceeded. ${await res.text().catch(() => "")}`);
+  }
+  return json(res);
+}
+
+export async function getUsage(): Promise<UsageRecord[]> {
+  return json(await fetch("/billing/usage", { headers: tenantHeaders() }));
+}
+
+export async function getBudget(projectId: string): Promise<BudgetResponse> {
+  return json(await fetch(`/projects/${projectId}/budget`, { headers: tenantHeaders() }));
+}
+
+export async function setBudget(projectId: string, budgetUsd: number): Promise<BudgetResponse> {
+  return json(
+    await fetch(`/projects/${projectId}/budget`, {
+      method: "PUT",
+      headers: tenantHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ budgetUsd }),
+    }),
+  );
+}
+
+export async function getInvoice(): Promise<Invoice> {
+  return json(await fetch("/billing/invoice", { headers: tenantHeaders() }));
+}
+
+// --- Compliance packs (PCI-DSS / HIPAA) ------------------------------------
+
+export type ComplianceStandardId = "PCI_DSS" | "HIPAA";
+
+export interface StandardSummary {
+  standard: ComplianceStandardId;
+  reference: string;
+  description: string;
+  controlCount: number;
+}
+export interface ControlResult {
+  controlId: string;
+  title: string;
+  covered: boolean;
+  matchedNodeRefs: string[];
+  remediation: string | null;
+}
+export interface ComplianceReport {
+  standard: string;
+  reference: string;
+  totalControls: number;
+  coveredControls: number;
+  score: number;
+  passed: boolean;
+  results: ControlResult[];
+}
+
+export async function getStandards(): Promise<StandardSummary[]> {
+  return json(await fetch("/compliance/standards"));
+}
+
+export async function getComplianceTemplate(standard: ComplianceStandardId): Promise<BsgGraph> {
+  return json(await fetch(`/compliance/standards/${standard}/template`));
+}
+
+export async function checkCompliance(
+  standard: ComplianceStandardId,
+  bsg: BsgGraph,
+): Promise<ComplianceReport> {
+  return json(
+    await fetch("/compliance/check", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ standard, bsg }),
     }),
   );
 }
