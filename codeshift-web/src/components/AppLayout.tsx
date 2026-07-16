@@ -14,6 +14,7 @@ const navItems = [
   { to: "/", label: "Dashboard", end: true },
   { to: "/migrate", label: "Migrate", end: false },
   { to: "/new-code", label: "New code", end: false },
+  { to: "/portfolio", label: "Portfolio", end: false },
   { to: "/projects", label: "Projects", end: false },
   { to: "/playbooks", label: "Playbooks", end: false },
   { to: "/settings", label: "Settings", end: false },

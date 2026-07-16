@@ -2,11 +2,16 @@ package com.codeshift.api;
 
 import com.codeshift.bsg.BsgStore;
 import com.codeshift.bsg.DebtProducer;
+import com.codeshift.bsg.PerformanceProducer;
 import com.codeshift.bsg.ProjectStore;
 import com.codeshift.bsg.RequirementsProducer;
 import com.codeshift.bsg.model.BsgGraph;
 import com.codeshift.bsg.model.DebtReport;
+import com.codeshift.bsg.model.PerformanceReport;
+import com.codeshift.bsg.model.PortfolioReport;
+import com.codeshift.bsg.model.PortfolioReport.ProjectHealth;
 import com.codeshift.common.NewCodeMode;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.ObjectProvider;
@@ -35,14 +40,16 @@ public class ProjectController {
     private final ObjectProvider<BsgStore> bsgStore;
     private final RequirementsProducer requirements;
     private final DebtProducer debt;
+    private final PerformanceProducer performance;
 
     public ProjectController(ObjectProvider<ProjectStore> projectStore,
             ObjectProvider<BsgStore> bsgStore, RequirementsProducer requirements,
-            DebtProducer debt) {
+            DebtProducer debt, PerformanceProducer performance) {
         this.projectStore = projectStore;
         this.bsgStore = bsgStore;
         this.requirements = requirements;
         this.debt = debt;
+        this.performance = performance;
     }
 
     private ProjectStore projects() {
@@ -114,6 +121,44 @@ public class ProjectController {
         BsgGraph current = bsg().getVersion(vs.get(0).versionId());
         BsgGraph previous = vs.size() > 1 ? bsg().getVersion(vs.get(1).versionId()) : null;
         return debt.analyze(current, previous);
+    }
+
+    /** Performance Agent: optimisation recommendations from the latest BSG. */
+    @GetMapping("/projects/{projectId}/performance")
+    public PerformanceReport performance(@PathVariable String projectId) {
+        return performance.analyze(latestBsg(UUID.fromString(projectId)));
+    }
+
+    /** Portfolio Intelligence: CIO-level health across every project. */
+    @GetMapping("/portfolio")
+    public PortfolioReport portfolio() {
+        List<ProjectHealth> health = new ArrayList<>();
+        int scoreSum = 0;
+        for (ProjectStore.ProjectSummary p : projects().list()) {
+            List<BsgStore.VersionSummary> vs = bsg().listVersions(p.id());
+            int score = 0;
+            String grade = "A";
+            int nodeCount = vs.isEmpty() ? 0 : vs.get(0).nodeCount();
+            if (!vs.isEmpty()) {
+                BsgGraph current = bsg().getVersion(vs.get(0).versionId());
+                BsgGraph previous = vs.size() > 1 ? bsg().getVersion(vs.get(1).versionId()) : null;
+                DebtReport d = debt.analyze(current, previous);
+                score = d.debtScore();
+                grade = d.grade();
+            }
+            scoreSum += score;
+            health.add(new ProjectHealth(p.id().toString(), p.name(), vs.size(), nodeCount, score, grade));
+        }
+        int avg = health.isEmpty() ? 0 : scoreSum / health.size();
+        return new PortfolioReport(health.size(), avg, health);
+    }
+
+    private BsgGraph latestBsg(UUID projectId) {
+        List<BsgStore.VersionSummary> vs = bsg().listVersions(projectId);
+        if (vs.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No BSG yet for this project.");
+        }
+        return bsg().getVersion(vs.get(0).versionId());
     }
 
     /** New-code addition: a feature request → new NEW_FEATURE nodes → new version. */
