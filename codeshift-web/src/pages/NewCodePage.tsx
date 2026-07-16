@@ -3,9 +3,11 @@ import {
   addFeature,
   createProject,
   getBsgVersions,
+  getDebt,
   listProjects,
   seedBsg,
   type BsgGraph,
+  type DebtReport,
   type NewCodeMode,
   type ProjectSummary,
   type VersionSummary,
@@ -42,6 +44,7 @@ export default function NewCodePage() {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [selected, setSelected] = useState<string>("");
   const [versions, setVersions] = useState<VersionSummary[]>([]);
+  const [debt, setDebt] = useState<DebtReport | null>(null);
   const [name, setName] = useState("");
   const [feature, setFeature] = useState("");
   const [mode, setMode] = useState<NewCodeMode>("FEATURE");
@@ -75,7 +78,10 @@ export default function NewCodePage() {
     setSelected(projectId);
     setResultBsg(null);
     const v = await guard(() => getBsgVersions(projectId));
-    if (v) setVersions(v);
+    if (v) {
+      setVersions(v);
+      setDebt(v.length > 0 ? (await getDebt(projectId).catch(() => null)) : null);
+    }
   }
 
   async function onCreate() {
@@ -188,6 +194,20 @@ export default function NewCodePage() {
                   ))}
                   {versions.length === 0 && <p className="surface-note">No BSG yet — seed one to start.</p>}
                 </div>
+
+                {debt && (
+                  <div className="arch-meta" style={{ marginTop: 14 }}>
+                    <span className={`bsg-pill ${debt.grade === "A" || debt.grade === "B" ? "bsg-pill-approved" : "bsg-pill-rejected"}`}>
+                      Debt {debt.grade} · {debt.debtScore}/100
+                    </span>
+                    {debt.delta.addedRefs.length > 0 && (
+                      <span className="section-meta">+{debt.delta.addedRefs.length} rules since last version</span>
+                    )}
+                    {debt.signals.slice(0, 1).map((s, i) => (
+                      <span key={i} className="section-meta">{s}</span>
+                    ))}
+                  </div>
+                )}
               </section>
 
               <section className="surface">

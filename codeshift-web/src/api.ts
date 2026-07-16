@@ -301,6 +301,17 @@ export async function getBsgVersions(projectId: string): Promise<VersionSummary[
   return json(await fetch(`/projects/${projectId}/bsg/versions`));
 }
 
+export interface DebtReport {
+  debtScore: number;
+  grade: string;
+  signals: string[];
+  delta: { addedRefs: string[]; removedRefs: string[]; unchanged: number };
+}
+
+export async function getDebt(projectId: string): Promise<DebtReport> {
+  return json(await fetch(`/projects/${projectId}/debt`));
+}
+
 /** Seed an initial BSG so features can be added on top (demo helper). */
 export async function seedBsg(projectId: string, bsg: BsgGraph): Promise<{ versionNumber: number }> {
   return json(

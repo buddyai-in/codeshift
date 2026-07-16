@@ -1,9 +1,11 @@
 package com.codeshift.api;
 
 import com.codeshift.bsg.BsgStore;
+import com.codeshift.bsg.DebtProducer;
 import com.codeshift.bsg.ProjectStore;
 import com.codeshift.bsg.RequirementsProducer;
 import com.codeshift.bsg.model.BsgGraph;
+import com.codeshift.bsg.model.DebtReport;
 import com.codeshift.common.NewCodeMode;
 import java.util.List;
 import java.util.UUID;
@@ -32,12 +34,15 @@ public class ProjectController {
     private final ObjectProvider<ProjectStore> projectStore;
     private final ObjectProvider<BsgStore> bsgStore;
     private final RequirementsProducer requirements;
+    private final DebtProducer debt;
 
     public ProjectController(ObjectProvider<ProjectStore> projectStore,
-            ObjectProvider<BsgStore> bsgStore, RequirementsProducer requirements) {
+            ObjectProvider<BsgStore> bsgStore, RequirementsProducer requirements,
+            DebtProducer debt) {
         this.projectStore = projectStore;
         this.bsgStore = bsgStore;
         this.requirements = requirements;
+        this.debt = debt;
     }
 
     private ProjectStore projects() {
@@ -96,6 +101,19 @@ public class ProjectController {
         int next = bsg().nextVersionNumber(pid);
         UUID versionId = bsg().saveGraph(new BsgGraph(projectId, next, body.nodes(), body.edges()));
         return new SavedVersion(versionId.toString(), next);
+    }
+
+    /** Technical Debt Intelligence: score the latest BSG + delta from the prior version. */
+    @GetMapping("/projects/{projectId}/debt")
+    public DebtReport debt(@PathVariable String projectId) {
+        UUID pid = UUID.fromString(projectId);
+        List<BsgStore.VersionSummary> vs = bsg().listVersions(pid);
+        if (vs.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No BSG yet for this project.");
+        }
+        BsgGraph current = bsg().getVersion(vs.get(0).versionId());
+        BsgGraph previous = vs.size() > 1 ? bsg().getVersion(vs.get(1).versionId()) : null;
+        return debt.analyze(current, previous);
     }
 
     /** New-code addition: a feature request → new NEW_FEATURE nodes → new version. */
