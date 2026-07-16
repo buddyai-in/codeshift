@@ -2,6 +2,7 @@ package com.codeshift.api;
 
 import com.codeshift.bsg.MeteringStore;
 import com.codeshift.bsg.PaymentProvider;
+import com.codeshift.bsg.PaymentStore;
 import com.codeshift.bsg.ProjectStore;
 import com.codeshift.bsg.TenantStore;
 import com.codeshift.bsg.model.Invoice;
@@ -34,14 +35,16 @@ public class BillingController {
     private final ObjectProvider<MeteringStore> meteringStore;
     private final ObjectProvider<ProjectStore> projectStore;
     private final ObjectProvider<TenantStore> tenantStore;
+    private final ObjectProvider<PaymentStore> paymentStore;
     private final PaymentProvider payments;
 
     public BillingController(ObjectProvider<MeteringStore> meteringStore,
             ObjectProvider<ProjectStore> projectStore, ObjectProvider<TenantStore> tenantStore,
-            PaymentProvider payments) {
+            ObjectProvider<PaymentStore> paymentStore, PaymentProvider payments) {
         this.meteringStore = meteringStore;
         this.projectStore = projectStore;
         this.tenantStore = tenantStore;
+        this.paymentStore = paymentStore;
         this.payments = payments;
     }
 
@@ -116,5 +119,28 @@ public class BillingController {
     @GetMapping("/billing/invoice")
     public Invoice invoice() {
         return require(meteringStore).invoiceFor(currentOrg(), payments);
+    }
+
+    public record CheckoutResponse(String reference, String provider, String status,
+            BigDecimal amountUsd) {}
+
+    /**
+     * Start checkout for the tenant's current invoice total: create a payment intent
+     * via the provider and persist it as pending, ready for the webhook to settle.
+     */
+    @PostMapping("/billing/checkout")
+    public CheckoutResponse checkout() {
+        UUID org = currentOrg();
+        Invoice invoice = require(meteringStore).invoiceFor(org, payments);
+        Invoice.PaymentIntent intent = invoice.payment();
+        require(paymentStore).create(org, intent.id(), intent.provider(),
+                intent.status(), invoice.totalUsd());
+        return new CheckoutResponse(intent.id(), intent.provider(), intent.status(),
+                invoice.totalUsd());
+    }
+
+    @GetMapping("/billing/payments")
+    public List<PaymentStore.PaymentView> listPayments() {
+        return require(paymentStore).listByOrg(currentOrg());
     }
 }
