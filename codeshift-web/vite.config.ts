@@ -1,11 +1,33 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import type { ProxyOptions } from "vite";
+import type { IncomingMessage } from "node:http";
 
 const apiProxyTarget = process.env.VITE_API_PROXY_TARGET ?? "http://localhost:8080";
 
-// Dev server proxies API calls to the Spring Boot backend. Every top-level backend
-// route prefix must be listed here, otherwise the request hits the Vite dev server
-// (:5173) and 404s instead of reaching the API (:8080).
+// Dev server proxies API calls to the Spring Boot backend.
+//
+// Several client-side page routes share a prefix with an API path (e.g. the
+// /billing, /compliance, /portfolio, /projects, /datashift *pages* vs the
+// same-named API endpoints). A browser navigation and a fetch() to those paths
+// are indistinguishable by URL, so we route by intent: requests that accept HTML
+// (navigations / hard refreshes) are served the SPA; everything else (fetch, which
+// sends Accept: */* or application/json) is proxied to the API on :8080.
+function apiProxy(): ProxyOptions {
+  return {
+    target: apiProxyTarget,
+    changeOrigin: true,
+    bypass(req: IncomingMessage) {
+      const accept = req.headers.accept ?? "";
+      if (req.method === "GET" && accept.includes("text/html")) {
+        return req.url; // let Vite serve the SPA (history fallback -> index.html)
+      }
+      return undefined; // proxy to the backend API
+    },
+  };
+}
+
+// Every top-level backend route prefix. New backend prefixes must be added here.
 const backendPrefixes = [
   "/public", // free assessment funnel
   "/runs", // migration runs + BSG review
@@ -25,8 +47,6 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    proxy: Object.fromEntries(
-      backendPrefixes.map((prefix) => [prefix, { target: apiProxyTarget, changeOrigin: true }]),
-    ),
+    proxy: Object.fromEntries(backendPrefixes.map((prefix) => [prefix, apiProxy()])),
   },
 });
