@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import BsgReviewBoard from "../components/BsgReviewBoard";
 import ArchitectureView from "../components/ArchitectureView";
 import TransformationView from "../components/TransformationView";
@@ -34,6 +35,7 @@ export default function MigratePage() {
   const [validation, setValidation] = useState<ValidationReport | null>(null);
   const [hardening, setHardening] = useState<HardeningResult | null>(null);
   const [phase, setPhase] = useState<string>("");
+  const [persistedProjectId, setPersistedProjectId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -70,6 +72,7 @@ export default function MigratePage() {
     try {
       const res = await resumeRun(run.threadId, "APPROVED");
       setPhase(res.phase);
+      setPersistedProjectId(res.persistedProjectId);
       if (res.phase === "ARCH_REVIEW") {
         setArchitecture(await getArchitecture(run.threadId));
       }
@@ -179,6 +182,12 @@ export default function MigratePage() {
             </button>
             {bsgApproved && <span className="signal-pill signal-pill-ok">Gate #1 passed</span>}
           </div>
+          {persistedProjectId && (
+            <p className="surface-note" style={{ marginTop: 10 }}>
+              ✓ Approved BSG saved as an approved v1 in a new project.{" "}
+              <Link to="/new-code">Add features on the New code page →</Link>
+            </p>
+          )}
         </section>
       )}
 

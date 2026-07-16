@@ -2,7 +2,9 @@ package com.codeshift.api;
 
 import com.codeshift.bsg.ArchitectureProducer;
 import com.codeshift.bsg.BsgProducer;
+import com.codeshift.bsg.BsgStore;
 import com.codeshift.bsg.HardeningProducer;
+import com.codeshift.bsg.ProjectStore;
 import com.codeshift.bsg.TransformationProducer;
 import com.codeshift.bsg.ValidationProducer;
 import com.codeshift.bsg.model.ArchitecturePlan;
@@ -22,11 +24,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.bsc.langgraph4j.CompiledGraph;
 import org.bsc.langgraph4j.GraphInput;
 import org.bsc.langgraph4j.NodeOutput;
 import org.bsc.langgraph4j.RunnableConfig;
 import org.bsc.langgraph4j.checkpoint.MemorySaver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -40,11 +46,29 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @Service
 public class GraphRuntime {
 
+    private static final Logger log = LoggerFactory.getLogger(GraphRuntime.class);
+
+    /** Decision value the graph treats as "approve this gate" (see MigrationGraphFactory). */
+    private static final String APPROVED = "APPROVED";
+
+    /** The platform's standard target for a migrated Java system (Architecture Agent refines later). */
+    private static final String DEFAULT_TARGET_STACK = "JAVA_21_SPRING_BOOT";
+
     private final CompiledGraph<MigrationState> graph;
+
+    // Persistence is profile-gated (absent under the nodb profile), so it's optional here.
+    private final ObjectProvider<ProjectStore> projectStore;
+    private final ObjectProvider<BsgStore> bsgStore;
+
+    // threadId -> persisted project id, so the BSG gate auto-persists exactly once per run.
+    private final Map<String, String> persistedProjects = new ConcurrentHashMap<>();
 
     public GraphRuntime(BsgProducer bsgProducer, ArchitectureProducer architectureProducer,
             TransformationProducer transformationProducer, ValidationProducer validationProducer,
-            HardeningProducer hardeningProducer) {
+            HardeningProducer hardeningProducer, ObjectProvider<ProjectStore> projectStore,
+            ObjectProvider<BsgStore> bsgStore) {
+        this.projectStore = projectStore;
+        this.bsgStore = bsgStore;
         try {
             this.graph = new MigrationGraphFactory().build(new MemorySaver(),
                     bsgProducer, architectureProducer, transformationProducer, validationProducer,
@@ -158,13 +182,55 @@ public class GraphRuntime {
     public ResumeResult resume(String threadId, String decision) {
         RunnableConfig cfg = RunnableConfig.builder().threadId(threadId).build();
         try {
+            // The first gate reached is the BSG review. If it's approved, auto-persist the
+            // curated BSG snapshot into a project before resuming — that snapshot is exactly
+            // what the human signed off on, and it feeds the new-code / debt / portfolio pillars.
+            String persistedProjectId = persistedProjects.get(threadId);
+            if (persistedProjectId == null && APPROVED.equalsIgnoreCase(decision)) {
+                persistedProjectId = autoPersistApprovedBsg(threadId);
+            }
+
             RunnableConfig resumeCfg = graph.updateState(cfg, Map.of("review_decision", decision));
             MigrationState state = graph.invoke(GraphInput.resume(), resumeCfg)
                     .orElseThrow(() -> new IllegalStateException("Unknown thread " + threadId));
             return new ResumeResult(threadId, state.phase().orElse(null),
-                    state.reviewDecision().orElse(null), state.log());
+                    state.reviewDecision().orElse(null), state.log(), persistedProjectId);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to resume run " + threadId, e);
+        }
+    }
+
+    /**
+     * Persist the approved run BSG as a new project + approved v1. Best-effort: with the
+     * {@code nodb} profile the stores are absent and this is a no-op; a persistence failure
+     * is logged but never fails the migration resume. Runs at most once per thread.
+     */
+    private String autoPersistApprovedBsg(String threadId) {
+        ProjectStore projects = projectStore.getIfAvailable();
+        BsgStore store = bsgStore.getIfAvailable();
+        if (projects == null || store == null) {
+            return null; // nodb profile — nothing to persist into
+        }
+        try {
+            BsgGraph approved = bsgOf(threadId);
+            String projectName = approved.projectId() != null && !approved.projectId().isBlank()
+                    ? approved.projectId() : "migration-" + threadId.substring(0, 8);
+            UUID projectId = projects.create(projectName, "JAVA", DEFAULT_TARGET_STACK);
+
+            int versionNumber = store.nextVersionNumber(projectId);
+            BsgGraph toSave = new BsgGraph(projectId.toString(), versionNumber,
+                    approved.nodes(), approved.edges());
+            UUID versionId = store.saveGraph(toSave);
+            store.approveVersion(versionId, "migration-run");
+
+            persistedProjects.put(threadId, projectId.toString());
+            log.info("Auto-persisted approved BSG for run {} as project {} (v{}, {} nodes)",
+                    threadId, projectId, versionNumber, approved.nodes().size());
+            return projectId.toString();
+        } catch (Exception e) {
+            log.warn("Auto-persist of approved BSG failed for run {} (continuing): {}",
+                    threadId, e.getMessage());
+            return null;
         }
     }
 
@@ -194,7 +260,11 @@ public class GraphRuntime {
                               List<String> translationOrder, long bsgNodeCount,
                               List<String> log) {}
 
-    /** Response of {@link #resume}. */
+    /**
+     * Response of {@link #resume}. {@code persistedProjectId} is set the first time the BSG
+     * gate is approved (the run's BSG was auto-persisted into that project); null otherwise
+     * and always null under the {@code nodb} profile.
+     */
     public record ResumeResult(String threadId, String phase, String reviewDecision,
-                               List<String> log) {}
+                               List<String> log, String persistedProjectId) {}
 }

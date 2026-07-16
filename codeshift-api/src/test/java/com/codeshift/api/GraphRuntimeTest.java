@@ -16,10 +16,13 @@ import com.codeshift.bsg.model.HardeningResult.MessagingPlan;
 import com.codeshift.bsg.model.HardeningResult.SecurityReport;
 import com.codeshift.bsg.model.TransformationResult;
 import com.codeshift.bsg.model.ValidationReport;
+import com.codeshift.bsg.BsgStore;
+import com.codeshift.bsg.ProjectStore;
 import com.codeshift.common.BsgConfidence;
 import com.codeshift.common.BsgNodeType;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.ObjectProvider;
 
 /**
  * Exercises the run lifecycle without a Spring context or a database — proving
@@ -54,8 +57,21 @@ class GraphRuntimeTest {
                     new DevOpsBundle("FROM", "kind: Deployment", "name: CI"),
                     new MessagingPlan(messaging, List.of()));
 
+    /** An ObjectProvider with no bean available — models the nodb profile (no persistence). */
+    private static <T> ObjectProvider<T> none() {
+        return new ObjectProvider<>() {
+            @Override public T getObject() { throw new UnsupportedOperationException(); }
+            @Override public T getObject(Object... args) { throw new UnsupportedOperationException(); }
+            @Override public T getIfAvailable() { return null; }
+            @Override public T getIfUnique() { return null; }
+        };
+    }
+
     private GraphRuntime runtime() {
-        return new GraphRuntime(STUB, ARCH_STUB, TRANSFORM_STUB, VALIDATION_STUB, HARDENING_STUB);
+        ObjectProvider<ProjectStore> noProjects = none();
+        ObjectProvider<BsgStore> noBsg = none();
+        return new GraphRuntime(STUB, ARCH_STUB, TRANSFORM_STUB, VALIDATION_STUB, HARDENING_STUB,
+                noProjects, noBsg);
     }
 
     @Test

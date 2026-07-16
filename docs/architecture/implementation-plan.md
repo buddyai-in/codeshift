@@ -240,6 +240,13 @@ platform subscriber; security/cloud output on every run.
 > live DB, so it works in the `nodb` demo. ✅ UI: **New code**, **Portfolio** and
 > **DataShift** pages. Verified end‑to‑end: H2 `FeatureFlowTest`/`PortfolioFlowTest`
 > and a live `nodb` `datashift/convert` smoke test.
+> ✅ **Run → project bridge:** approving a migration run's **BSG gate** now
+> **auto‑persists** the curated BSG snapshot into a new project as an *approved v1*
+> (`GraphRuntime.autoPersistApprovedBsg`, best‑effort — a no‑op under `nodb`, once per
+> run), so a migration flows straight into the new‑code / debt / portfolio pillars.
+> `resume` returns the `persistedProjectId`; the Migrate UI links to the New code page.
+> Verified end‑to‑end by H2 `RunPersistTest` (start → approve → project listed with an
+> approved v1, no duplicate on the second gate).
 
 **Deliverables**
 - **New code addition** (4 modes) via `requirements` subgraph → BSG delta →

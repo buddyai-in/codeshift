@@ -111,6 +111,8 @@ export interface ResumeResult {
   phase: string;
   reviewDecision: string;
   log: string[];
+  /** Set the first time the BSG gate is approved: the project the run's BSG was persisted into. */
+  persistedProjectId: string | null;
 }
 
 async function json<T>(res: Response): Promise<T> {
