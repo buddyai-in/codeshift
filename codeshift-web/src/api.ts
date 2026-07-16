@@ -256,3 +256,68 @@ export interface HardeningResult {
 export async function getHardening(threadId: string): Promise<HardeningResult> {
   return json(await fetch(`/runs/${threadId}/hardening`));
 }
+
+// --- Projects + persistence + new-code addition ----------------------------
+
+export interface ProjectSummary {
+  id: string;
+  name: string;
+  sourceLanguage: string | null;
+  targetStack: string | null;
+  status: string;
+}
+export interface VersionSummary {
+  versionId: string;
+  versionNumber: number;
+  approved: boolean;
+  approvedBy: string | null;
+  nodeCount: number;
+}
+export interface FeatureResponse {
+  versionId: string;
+  versionNumber: number;
+  bsg: BsgGraph;
+}
+
+export async function createProject(
+  name: string,
+  sourceLanguage: string,
+  targetStack: string,
+): Promise<{ projectId: string }> {
+  return json(
+    await fetch("/projects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, sourceLanguage, targetStack }),
+    }),
+  );
+}
+
+export async function listProjects(): Promise<ProjectSummary[]> {
+  return json(await fetch("/projects"));
+}
+
+export async function getBsgVersions(projectId: string): Promise<VersionSummary[]> {
+  return json(await fetch(`/projects/${projectId}/bsg/versions`));
+}
+
+/** Seed an initial BSG so features can be added on top (demo helper). */
+export async function seedBsg(projectId: string, bsg: BsgGraph): Promise<{ versionNumber: number }> {
+  return json(
+    await fetch(`/projects/${projectId}/bsg`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(bsg),
+    }),
+  );
+}
+
+export async function addFeature(projectId: string, request: string): Promise<FeatureResponse> {
+  return json(
+    await fetch(`/projects/${projectId}/feature-requests`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ request }),
+    }),
+  );
+}

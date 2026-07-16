@@ -118,8 +118,12 @@ the platform's core IP. First paying migration engagement becomes possible.
 > the graph now runs `discovery → analysis → BSG gate → architecture → arch gate → BUILD`
 > with two durable interrupts. API: `GET /runs/{id}/architecture`; the UI renders the
 > plan + a second approval. Verified live (approve BSG → ARCH_REVIEW → approve → BUILD).
-> **Remaining:** LLM `bsg_versions`/`bsg_nodes` **persistence** (DB profile) + fork‑on‑edit ·
-> LLM refinement in the Architecture Agent · human‑review queue · eval v1 (golden BSG corpus).
+> **Update 2:** ✅ **BSG persistence** landed — `ProjectStore` + `BsgStore` persist
+> versioned BSGs to Postgres (via JPA); `listVersions` is the audit trail; verified
+> against a real DB with H2 integration tests (`BsgPersistenceTest`, `FeatureFlowTest`).
+> Persistence is profile‑gated (default profile; `nodb` returns 503).
+> **Remaining:** fork‑on‑edit at the gate · LLM refinement in the Architecture Agent ·
+> human‑review queue · eval v1 (golden BSG corpus).
 
 **Deliverables**
 - `analysis` subgraph — three sub‑nodes: (a) structural parse, (b) business‑rule
@@ -223,6 +227,19 @@ platform subscriber; security/cloud output on every run.
 ## Phase 5 — Continuous modernisation pillars (weeks 25–30)
 
 **Goal:** convert one‑time migration into **subscription** — the business.
+
+> **Status (new‑code addition started):** ✅ **Requirements Agent** (`RequirementsProducer`):
+> turns a plain‑English feature request into new `NEW_FEATURE` BSG nodes appended as a
+> new **persisted version** (LLM + offline skeleton). ✅ API: `POST /projects`,
+> `GET /projects`, `POST /projects/{id}/bsg` (seed), `GET /projects/{id}/bsg/versions`
+> (audit trail), `POST /projects/{id}/feature-requests`. ✅ UI: a **New code** page —
+> create/select a project, seed a BSG, submit a feature request, and see the new
+> version with the NEW_FEATURE nodes highlighted. Verified end‑to‑end against a real DB
+> (H2 `FeatureFlowTest`: create → seed → add feature → v2 with NEW_FEATURE + 2‑version
+> audit trail).
+> **Remaining in Phase 5:** the other 3 new‑code modes (integration/architecture/greenfield)
+> routed through downstream agents · Technical Debt Intelligence · Performance Agent ·
+> Portfolio Intelligence · DataShift (Oracle→Postgres).
 
 **Deliverables**
 - **New code addition** (4 modes) via `requirements` subgraph → BSG delta →

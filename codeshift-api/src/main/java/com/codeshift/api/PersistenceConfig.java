@@ -1,9 +1,11 @@
 package com.codeshift.api;
 
 import com.codeshift.bsg.BsgStore;
+import com.codeshift.bsg.ProjectStore;
 import com.codeshift.bsg.repo.BsgEdgeRepository;
 import com.codeshift.bsg.repo.BsgNodeRepository;
 import com.codeshift.bsg.repo.BsgVersionRepository;
+import com.codeshift.bsg.repo.MigrationProjectRepository;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,5 +30,10 @@ public class PersistenceConfig {
     BsgStore bsgStore(BsgVersionRepository versions, BsgNodeRepository nodes,
             BsgEdgeRepository edges) {
         return new BsgStore(versions, nodes, edges);
+    }
+
+    @Bean
+    ProjectStore projectStore(MigrationProjectRepository projects) {
+        return new ProjectStore(projects);
     }
 }

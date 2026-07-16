@@ -72,6 +72,34 @@ public class BsgStore {
         return versionId;
     }
 
+    /** All versions of a project's BSG, newest first — the audit trail. */
+    @Transactional(readOnly = true)
+    public List<VersionSummary> listVersions(UUID projectId) {
+        return versions.findByProjectIdOrderByVersionNumberDesc(projectId).stream()
+                .map(v -> new VersionSummary(v.getId(), v.getVersionNumber(), v.isApproved(),
+                        v.getApprovedBy(),
+                        nodes.findByVersionIdOrderByNodeRef(v.getId()).size()))
+                .toList();
+    }
+
+    /** The next version number for a project (1 for a fresh project). */
+    @Transactional(readOnly = true)
+    public int nextVersionNumber(UUID projectId) {
+        return versions.findByProjectIdOrderByVersionNumberDesc(projectId).stream()
+                .mapToInt(BsgVersionEntity::getVersionNumber).max().orElse(0) + 1;
+    }
+
+    /** The latest (highest-numbered) BSG version's id, if any. */
+    @Transactional(readOnly = true)
+    public java.util.Optional<UUID> latestVersionId(UUID projectId) {
+        return versions.findByProjectIdOrderByVersionNumberDesc(projectId).stream()
+                .findFirst().map(BsgVersionEntity::getId);
+    }
+
+    /** A lightweight view of a persisted BSG version. */
+    public record VersionSummary(UUID versionId, int versionNumber, boolean approved,
+            String approvedBy, int nodeCount) {}
+
     /** Read a BSG version back (nodes + edges) for review or retrieval. */
     @Transactional(readOnly = true)
     public BsgGraph getVersion(UUID versionId) {
