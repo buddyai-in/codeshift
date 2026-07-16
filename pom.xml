@@ -27,6 +27,7 @@
     <module>codeshift-assessment</module>
     <module>codeshift-sandbox</module>
     <module>codeshift-datashift</module>
+    <module>codeshift-compliance</module>
     <module>codeshift-agents</module>
     <module>codeshift-evals</module>
     <module>codeshift-graph</module>
@@ -108,6 +109,11 @@
       <dependency>
         <groupId>com.codeshift</groupId>
         <artifactId>codeshift-datashift</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.codeshift</groupId>
+        <artifactId>codeshift-compliance</artifactId>
         <version>${project.version}</version>
       </dependency>
     </dependencies>
