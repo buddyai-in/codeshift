@@ -4,6 +4,7 @@ import type { AssessmentResult } from "./api";
 import AppLayout from "./components/AppLayout";
 import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
+import DataShiftPage from "./pages/DataShiftPage";
 import MigratePage from "./pages/MigratePage";
 import NewCodePage from "./pages/NewCodePage";
 import PortfolioPage from "./pages/PortfolioPage";
@@ -121,6 +122,7 @@ export default function App() {
         />
         <Route path="migrate" element={<MigratePage />} />
         <Route path="new-code" element={<NewCodePage />} />
+        <Route path="datashift" element={<DataShiftPage />} />
         <Route path="portfolio" element={<PortfolioPage />} />
         <Route path="projects" element={<ProjectsPage report={result?.report ?? null} />} />
         <Route path="playbooks" element={<PlaybooksPage />} />

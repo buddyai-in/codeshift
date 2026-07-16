@@ -1153,3 +1153,18 @@ code {
   cursor: pointer;
 }
 .hard-tab-active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-soft); }
+
+/* ---- DataShift (Oracle -> PostgreSQL) --------------------------------- */
+.ddl-input {
+  width: 100%; box-sizing: border-box; resize: vertical;
+  padding: 14px; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--surface-strong); color: var(--ink);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; line-height: 1.55;
+}
+.ddl-input:focus { outline: none; border-color: var(--accent); }
+.ddl-output {
+  margin: 0; padding: 14px; border-radius: 12px;
+  background: var(--surface-strong); color: var(--ink);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; line-height: 1.55;
+  overflow-x: auto; white-space: pre; border: 1px solid var(--line);
+}

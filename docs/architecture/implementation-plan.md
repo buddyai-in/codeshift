@@ -228,18 +228,18 @@ platform subscriber; security/cloud output on every run.
 
 **Goal:** convert one‑time migration into **subscription** — the business.
 
-> **Status (new‑code addition started):** ✅ **Requirements Agent** (`RequirementsProducer`):
-> turns a plain‑English feature request into new `NEW_FEATURE` BSG nodes appended as a
-> new **persisted version** (LLM + offline skeleton). ✅ API: `POST /projects`,
-> `GET /projects`, `POST /projects/{id}/bsg` (seed), `GET /projects/{id}/bsg/versions`
-> (audit trail), `POST /projects/{id}/feature-requests`. ✅ UI: a **New code** page —
-> create/select a project, seed a BSG, submit a feature request, and see the new
-> version with the NEW_FEATURE nodes highlighted. Verified end‑to‑end against a real DB
-> (H2 `FeatureFlowTest`: create → seed → add feature → v2 with NEW_FEATURE + 2‑version
-> audit trail).
-> **Remaining in Phase 5:** the other 3 new‑code modes (integration/architecture/greenfield)
-> routed through downstream agents · Technical Debt Intelligence · Performance Agent ·
-> Portfolio Intelligence · DataShift (Oracle→Postgres).
+> **Status — Phase 5 pillars complete:** ✅ **Requirements Agent** (`RequirementsProducer`,
+> all 4 modes — feature/integration/architecture/greenfield): turns a plain‑English
+> feature request into new `NEW_FEATURE` BSG nodes appended as a new **persisted
+> version** (LLM + offline skeleton). ✅ **Technical Debt Intelligence** (`DebtAgent`):
+> delta‑BSG scoring + grade + signals. ✅ **Performance Agent** (`PerformanceAgent`).
+> ✅ **Portfolio Intelligence**: multi‑app roll‑up (`GET /portfolio`) + CIO health
+> dashboard. ✅ **DataShift** (`codeshift-datashift`, `DdlConverter`): deterministic
+> Oracle→PostgreSQL DDL conversion (type + function mappings, audited substitutions,
+> unsupported‑construct warnings) via `POST /datashift/convert` — runs in‑process, no
+> live DB, so it works in the `nodb` demo. ✅ UI: **New code**, **Portfolio** and
+> **DataShift** pages. Verified end‑to‑end: H2 `FeatureFlowTest`/`PortfolioFlowTest`
+> and a live `nodb` `datashift/convert` smoke test.
 
 **Deliverables**
 - **New code addition** (4 modes) via `requirements` subgraph → BSG delta →

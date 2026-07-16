@@ -41,6 +41,10 @@
       <groupId>com.codeshift</groupId>
       <artifactId>codeshift-assessment</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.codeshift</groupId>
+      <artifactId>codeshift-datashift</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>org.springframework.boot</groupId>

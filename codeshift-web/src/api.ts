@@ -356,3 +356,28 @@ export async function addFeature(
     }),
   );
 }
+
+// --- DataShift (Oracle -> PostgreSQL DDL) ----------------------------------
+
+export interface TypeMapping {
+  source: string;
+  target: string;
+  occurrences: number;
+}
+export interface DataShiftResult {
+  sourceDialect: string;
+  targetDialect: string;
+  convertedDdl: string;
+  mappings: TypeMapping[];
+  warnings: string[];
+}
+
+export async function convertDdl(ddl: string): Promise<DataShiftResult> {
+  return json(
+    await fetch("/datashift/convert", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ddl }),
+    }),
+  );
+}
