@@ -8,6 +8,7 @@ import com.codeshift.common.BsgNodeType;
 import com.codeshift.common.BsgOrigin;
 import com.codeshift.common.HumanStatus;
 import com.codeshift.common.ModelProfile;
+import com.codeshift.common.NewCodeMode;
 import com.codeshift.gateway.ModelGateway;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,23 +42,42 @@ public class RequirementsAgent implements RequirementsProducer {
     }
 
     @Override
-    public BsgGraph addFeature(BsgGraph currentBsg, String featureRequest, int newVersionNumber) {
+    public BsgGraph addFeature(BsgGraph currentBsg, String featureRequest, NewCodeMode mode,
+            int newVersionNumber) {
         int start = nextFeatureNumber(currentBsg);
         List<BsgNode> newNodes = gateway.isAvailable()
-                ? llmRules(currentBsg, featureRequest, start)
+                ? llmRules(currentBsg, featureRequest, mode, start)
                 : List.of();
         if (newNodes.isEmpty()) {
-            newNodes = List.of(skeletonRule(featureRequest, start));
+            newNodes = List.of(skeletonRule(featureRequest, mode, start));
         }
 
         List<BsgNode> merged = new ArrayList<>(currentBsg.nodes());
         merged.addAll(newNodes);
-        log.info("Requirements Agent added {} NEW_FEATURE node(s) as version {}",
-                newNodes.size(), newVersionNumber);
+        log.info("Requirements Agent added {} {} node(s) as version {}",
+                newNodes.size(), originFor(mode), newVersionNumber);
         return new BsgGraph(currentBsg.projectId(), newVersionNumber, merged, currentBsg.edges());
     }
 
-    private List<BsgNode> llmRules(BsgGraph currentBsg, String featureRequest, int start) {
+    /** The BSG origin implied by a new-code mode (product doc §7.2 node origins). */
+    private static BsgOrigin originFor(NewCodeMode mode) {
+        return switch (mode) {
+            case INTEGRATION -> BsgOrigin.INTEGRATION;
+            case ARCHITECTURE -> BsgOrigin.REFACTORED;
+            case FEATURE, GREENFIELD -> BsgOrigin.NEW_FEATURE;
+        };
+    }
+
+    private static BsgNodeType defaultTypeFor(NewCodeMode mode) {
+        return switch (mode) {
+            case INTEGRATION -> BsgNodeType.EXTERNAL_CONTRACT;
+            case ARCHITECTURE -> BsgNodeType.STATE_TRANSITION;
+            case FEATURE, GREENFIELD -> BsgNodeType.BUSINESS_RULE;
+        };
+    }
+
+    private List<BsgNode> llmRules(BsgGraph currentBsg, String featureRequest, NewCodeMode mode,
+            int start) {
         try {
             String existing = currentBsg.nodes().stream()
                     .map(n -> n.nodeRef() + ": " + n.title()).limit(30)
@@ -89,7 +109,7 @@ public class RequirementsAgent implements RequirementsProducer {
                 nodes.add(new BsgNode(String.format("BSG-F%03d", i++), parseType(r.nodeType()),
                         safe(r.title(), "New feature"), safe(r.description(), featureRequest),
                         r.sourceLocation(), parseConfidence(r.confidence()),
-                        HumanStatus.PENDING, BsgOrigin.NEW_FEATURE, null, false));
+                        HumanStatus.PENDING, originFor(mode), null, false));
             }
             return nodes;
         } catch (Exception e) {
@@ -98,11 +118,17 @@ public class RequirementsAgent implements RequirementsProducer {
         }
     }
 
-    private static BsgNode skeletonRule(String featureRequest, int number) {
+    private static BsgNode skeletonRule(String featureRequest, NewCodeMode mode, int number) {
         String title = featureRequest.length() > 60 ? featureRequest.substring(0, 60) + "…" : featureRequest;
-        return new BsgNode(String.format("BSG-F%03d", number), BsgNodeType.BUSINESS_RULE,
-                "Feature: " + title, featureRequest, null, BsgConfidence.MEDIUM,
-                HumanStatus.PENDING, BsgOrigin.NEW_FEATURE, null, false);
+        String prefix = switch (mode) {
+            case INTEGRATION -> "Integration: ";
+            case ARCHITECTURE -> "Refactor: ";
+            case GREENFIELD -> "Greenfield: ";
+            case FEATURE -> "Feature: ";
+        };
+        return new BsgNode(String.format("BSG-F%03d", number), defaultTypeFor(mode),
+                prefix + title, featureRequest, null, BsgConfidence.MEDIUM,
+                HumanStatus.PENDING, originFor(mode), null, false);
     }
 
     private static int nextFeatureNumber(BsgGraph bsg) {

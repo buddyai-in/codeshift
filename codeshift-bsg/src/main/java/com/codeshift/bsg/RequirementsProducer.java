@@ -1,19 +1,16 @@
 package com.codeshift.bsg;
 
 import com.codeshift.bsg.model.BsgGraph;
+import com.codeshift.common.NewCodeMode;
 
 /**
- * New-code addition (product doc §7): turns a natural-language feature request
- * into new {@code NEW_FEATURE} BSG nodes appended to the current BSG as a new
- * version. Implemented by the Requirements Agent.
+ * New-code addition (product doc §7): turns a natural-language request into new
+ * BSG nodes appended to the current BSG as a new version. Implemented by the
+ * Requirements Agent. The {@link NewCodeMode} controls the origin/type of the
+ * new nodes (feature / integration / architecture evolution / greenfield).
  */
 public interface RequirementsProducer {
 
-    /**
-     * @param currentBsg       the project's current (approved) BSG
-     * @param featureRequest   plain-English request, e.g. "when an order ships, send an SMS"
-     * @param newVersionNumber the version number for the resulting BSG
-     * @return the current BSG plus new NEW_FEATURE nodes, as a new version
-     */
-    BsgGraph addFeature(BsgGraph currentBsg, String featureRequest, int newVersionNumber);
+    BsgGraph addFeature(BsgGraph currentBsg, String featureRequest, NewCodeMode mode,
+            int newVersionNumber);
 }

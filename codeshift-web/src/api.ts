@@ -312,12 +312,18 @@ export async function seedBsg(projectId: string, bsg: BsgGraph): Promise<{ versi
   );
 }
 
-export async function addFeature(projectId: string, request: string): Promise<FeatureResponse> {
+export type NewCodeMode = "FEATURE" | "INTEGRATION" | "ARCHITECTURE" | "GREENFIELD";
+
+export async function addFeature(
+  projectId: string,
+  request: string,
+  mode: NewCodeMode = "FEATURE",
+): Promise<FeatureResponse> {
   return json(
     await fetch(`/projects/${projectId}/feature-requests`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ request }),
+      body: JSON.stringify({ request, mode }),
     }),
   );
 }

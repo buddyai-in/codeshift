@@ -4,6 +4,7 @@ import com.codeshift.bsg.BsgStore;
 import com.codeshift.bsg.ProjectStore;
 import com.codeshift.bsg.RequirementsProducer;
 import com.codeshift.bsg.model.BsgGraph;
+import com.codeshift.common.NewCodeMode;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.factory.ObjectProvider;
@@ -63,7 +64,7 @@ public class ProjectController {
 
     public record SavedVersion(String versionId, int versionNumber) {}
 
-    public record FeatureRequestBody(String request) {}
+    public record FeatureRequestBody(String request, NewCodeMode mode) {}
 
     public record FeatureResponse(String versionId, int versionNumber, BsgGraph bsg) {}
 
@@ -106,7 +107,8 @@ public class ProjectController {
                 HttpStatus.BAD_REQUEST, "No BSG yet for this project — persist an initial version first."));
         BsgGraph current = bsg().getVersion(latest);
         int next = bsg().nextVersionNumber(pid);
-        BsgGraph updated = requirements.addFeature(current, body.request(), next);
+        NewCodeMode mode = body.mode() != null ? body.mode() : NewCodeMode.FEATURE;
+        BsgGraph updated = requirements.addFeature(current, body.request(), mode, next);
         UUID versionId = bsg().saveGraph(new BsgGraph(projectId, next, updated.nodes(), updated.edges()));
         return new FeatureResponse(versionId.toString(), next, bsg().getVersion(versionId));
     }

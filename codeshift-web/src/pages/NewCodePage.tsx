@@ -6,9 +6,17 @@ import {
   listProjects,
   seedBsg,
   type BsgGraph,
+  type NewCodeMode,
   type ProjectSummary,
   type VersionSummary,
 } from "../api";
+
+const MODES: { value: NewCodeMode; label: string }[] = [
+  { value: "FEATURE", label: "Feature addition" },
+  { value: "INTEGRATION", label: "Integration" },
+  { value: "ARCHITECTURE", label: "Architecture evolution" },
+  { value: "GREENFIELD", label: "Greenfield module" },
+];
 
 const SAMPLE_BSG = (projectId: string): BsgGraph => ({
   projectId,
@@ -36,6 +44,7 @@ export default function NewCodePage() {
   const [versions, setVersions] = useState<VersionSummary[]>([]);
   const [name, setName] = useState("");
   const [feature, setFeature] = useState("");
+  const [mode, setMode] = useState<NewCodeMode>("FEATURE");
   const [resultBsg, setResultBsg] = useState<BsgGraph | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -86,7 +95,7 @@ export default function NewCodePage() {
 
   async function onAddFeature() {
     if (!selected || !feature.trim()) return;
-    const r = await guard(() => addFeature(selected, feature.trim()));
+    const r = await guard(() => addFeature(selected, feature.trim(), mode));
     if (r) {
       setResultBsg(r.bsg);
       setFeature("");
@@ -189,7 +198,17 @@ export default function NewCodePage() {
                   </div>
                 </div>
                 <div className="field">
-                  <label htmlFor="feature">Feature request (plain English)</label>
+                  <label htmlFor="mode">Mode</label>
+                  <select id="mode" className="bsg-title-input" value={mode}
+                    disabled={busy || versions.length === 0}
+                    onChange={(e) => setMode(e.target.value as NewCodeMode)}>
+                    {MODES.map((m) => (
+                      <option key={m.value} value={m.value}>{m.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="field">
+                  <label htmlFor="feature">Request (plain English)</label>
                   <input id="feature" type="text" value={feature} disabled={busy || versions.length === 0}
                     onChange={(e) => setFeature(e.target.value)}
                     placeholder="When an order ships, send an SMS via Twilio with a tracking link" />
